@@ -34,17 +34,29 @@ jobs:
         run: npm run build
         env:
           VITE_REPO_NAME: ${{ github.event.repository.name }}
-      
+
+      - name: Build work-experience forms preview
+        working-directory: student-experience-app
+        run: |
+          npm ci
+          npm run build
+        env:
+          VITE_REPO_NAME: ${{ github.event.repository.name }}
+
       - name: Prepare deployment
         run: |
           mkdir -p ./_site
-          
+
           # Copy workshop docs to deployment root
           cp -r docs/* ./_site/
-          
+
           # Copy built app to /game/ subfolder
           cp -r dist ./_site/game
-          
+
+          # Copy built work-experience forms preview to /work-experience/
+          # (static UI only - it has no backend here, see student-experience-app/README.md)
+          cp -r student-experience-app/dist ./_site/work-experience
+
           # Prevent Jekyll processing
           touch ./_site/.nojekyll
       
