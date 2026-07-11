@@ -1,5 +1,5 @@
 import ExcelJS from 'exceljs';
-import { fetchAllTables } from './db';
+import { fetchAllTables } from './db.js';
 
 function addSheet(workbook: ExcelJS.Workbook, name: string, rows: Record<string, unknown>[]) {
   const sheet = workbook.addWorksheet(name);

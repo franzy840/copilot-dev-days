@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
-import { ADMIN_EMAIL } from '../../shared/constants';
-import { buildWorkbookBuffer } from './excel';
+import { ADMIN_EMAIL } from '../../shared/constants.js';
+import { buildWorkbookBuffer } from './excel.js';
 
 function getTransport() {
   const user = process.env.GMAIL_USER;

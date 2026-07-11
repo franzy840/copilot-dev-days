@@ -3,10 +3,10 @@ import {
   CONTACT_INFO_FIELDS,
   LOCAL_INDUCTION_FIELDS,
   QUIZ_QUESTIONS,
-} from '../shared/constants';
-import { insertContactInfo, insertLocalInduction, insertQuiz, insertWideningAccess } from './_lib/db';
-import { missingRequiredFields, isValidEmail } from './_lib/validate';
-import { sendAdminNotification } from './_lib/mailer';
+} from '../shared/constants.js';
+import { insertContactInfo, insertLocalInduction, insertQuiz, insertWideningAccess } from './_lib/db.js';
+import { missingRequiredFields, isValidEmail } from './_lib/validate.js';
+import { sendAdminNotification } from './_lib/mailer.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {

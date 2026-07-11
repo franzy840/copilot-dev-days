@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { FEEDBACK_STATEMENTS, CONCERN_FIELD_NAME } from '../shared/constants';
-import { insertFeedback } from './_lib/db';
-import { sendAdminNotification, sendUrgentAlert } from './_lib/mailer';
+import { FEEDBACK_STATEMENTS, CONCERN_FIELD_NAME } from '../shared/constants.js';
+import { insertFeedback } from './_lib/db.js';
+import { sendAdminNotification, sendUrgentAlert } from './_lib/mailer.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {

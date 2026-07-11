@@ -1,4 +1,4 @@
-import type { FieldDef } from '../../shared/constants';
+import type { FieldDef } from '../../shared/constants.js';
 
 /** Returns the labels of any required fields missing/blank from `data`. */
 export function missingRequiredFields(fields: FieldDef[], data: Record<string, unknown>): string[] {
