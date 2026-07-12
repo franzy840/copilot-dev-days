@@ -110,13 +110,35 @@ CREATE INDEX IF NOT EXISTS idx_quiz_responses_user_id ON quiz_responses(user_id)
 CREATE INDEX IF NOT EXISTS idx_feedback_user_id ON feedback(user_id);
 
 -- 9
--- Per-student, per-section access control. A row's presence means the
--- admin has unlocked that section for that student; no row means locked.
--- Every student starts fully locked out of all 5 sections until the
--- admin grants each one individually from the Users tab.
+-- Per-student, per-section access control. A row's presence means that
+-- section is unlocked for that student; no row means locked. Contact
+-- Info, Widening Access, and the Quiz are granted automatically at
+-- signup (see api/auth.ts handleSignup); Local Induction and Final Day
+-- Feedback require the admin to grant them individually from the Users
+-- tab (a student can ask via the "Request Access" button, which shows
+-- up in the admin Notifications tab).
 CREATE TABLE IF NOT EXISTS section_access (
   user_id INTEGER NOT NULL REFERENCES users(id),
   section TEXT NOT NULL,
   granted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (user_id, section)
 );
+
+-- 10
+-- One row per student request to unlock a still-locked section. Left
+-- unresolved (resolved_at IS NULL) until an admin grants or dismisses
+-- it from the Notifications tab.
+CREATE TABLE IF NOT EXISTS access_requests (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  section TEXT NOT NULL,
+  requested_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  resolved_at TIMESTAMPTZ
+);
+
+-- 11
+-- A student can only have one pending (unresolved) request per section
+-- at a time - this partial unique index enforces that at the database
+-- level in addition to the app-level check.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_access_requests_pending
+  ON access_requests(user_id, section) WHERE resolved_at IS NULL;

@@ -32,6 +32,12 @@ export const SECTION_LABELS: Record<SectionKey, string> = {
   feedback: 'Final Day Feedback',
 };
 
+// Granted automatically at signup - no admin action needed. Local
+// Induction and Final Day Feedback are deliberately left out: they
+// require the admin to grant them individually (a student can ask via
+// the "Request Access" button once they're locked out of one).
+export const DEFAULT_GRANTED_SECTIONS: SectionKey[] = ['contactInfo', 'wideningAccess', 'quiz'];
+
 export type FieldType = 'text' | 'email' | 'tel' | 'date' | 'number' | 'textarea' | 'select';
 
 export interface FieldDef {
@@ -90,14 +96,15 @@ export const CONTACT_INFO_FIELDS: FieldDef[] = [
 
 const PREFER_NOT_TO_SAY = 'Prefer not to say';
 
+export const AGE_BUCKET_LABELS = ['Under 16', '16-18', '19-24', '25-29', '30-39', '40-49', '50-59', '60+'];
+
 export const WIDENING_ACCESS_FIELDS: FieldDef[] = [
   {
     name: 'age',
     label: 'Age',
-    type: 'number',
-    min: 10,
-    max: 100,
-    helpText: 'Leave blank if you’d prefer not to say.',
+    type: 'select',
+    required: true,
+    options: [...AGE_BUCKET_LABELS, PREFER_NOT_TO_SAY],
   },
   {
     name: 'gender',

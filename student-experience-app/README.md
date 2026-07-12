@@ -9,15 +9,16 @@ accounts and an admin dashboard:
 - **`/day1`** — logged-in students only. A hub linking to 4 independent
   sections — Contact Info, the Widening Access Participation Survey,
   Local Induction sign-off, and the safety Induction Quiz (auto-graded) —
-  each stored in its own database table / Excel tab. **Every section
-  starts locked for every student.** The admin unlocks each section
-  individually per student from the Users tab (see below); a student
-  only sees/can submit a section once it's been granted, and each
-  section can only be submitted once.
+  each stored in its own database table / Excel tab. Contact Info,
+  Widening Access, and the Quiz are **unlocked automatically at signup**;
+  **Local Induction requires the admin to grant it** per student. A
+  student can tap **Request Access** on a locked section, which shows up
+  for the admin in the **Notifications** tab. Each section can only be
+  submitted once.
 - **`/feedback`** — logged-in students only, and **locked until the
-  admin grants the Feedback section** for that student (enforced both
-  in the UI and server-side in `api/feedback.ts`) — independent of
-  Day 1 section access.
+  admin grants the Feedback section** for that student (same
+  Request Access flow as Local Induction) — enforced both in the UI and
+  server-side in `api/feedback.ts`, independent of Day 1 section access.
 - **`/admin/login`** + **`/admin`** — admin-only dashboard (see below).
 
 Every submission is written to a Postgres database and triggers an
@@ -33,11 +34,15 @@ Sign in at `/admin/login` with username `hansel` (see `ADMIN_USERNAME`
 in `shared/constants.ts` if that ever needs to change) and the
 `ADMIN_PASSWORD` you set (see setup below — this is a separate
 env-var-based login, not a database account, and not the same as
-`ADMIN_EMAIL` which is only where notification emails go). Three tabs:
+`ADMIN_EMAIL` which is only where notification emails go). Four tabs:
 
 - **Analytics** — registered/completed counts, quiz score distribution,
   average feedback rating per statement, and Widening Access breakdowns
   (age, gender, ethnicity, disabilities), all as simple bar charts.
+- **Notifications** — every pending **Request Access** a student has
+  sent (student name/email, section requested, when), with **Grant
+  access** and **Dismiss** buttons per row. The tab label shows a live
+  count (e.g. "Notifications (2)") so new requests are easy to spot.
 - **Users** — every student account, with Day 1 / Feedback completion
   status, a **Manage access** toggle panel per row (5 switches — one
   per section — to grant/revoke that student's access; a "Submitted"
@@ -87,9 +92,9 @@ Dev Days workshop app) — it's a self-contained subfolder with its own
    whichever provider you attached, it can't run multiple statements
    pasted together at once, so run each numbered block separately):
    - **New database**: run every block in [`db/schema.sql`](./db/schema.sql)
-     in order — creates all 7 tables (including `users` with its
-     `password_hash` column, and `section_access` for per-student
-     section unlocking).
+     in order — creates all 9 tables (including `users` with its
+     `password_hash` column, `section_access` for per-student section
+     unlocking, and `access_requests` for the Notifications tab).
    - **Already ran an older version of this file against a live
      database?** Run, in order:
      1. [`db/migration_002_auth.sql`](./db/migration_002_auth.sql) —
@@ -101,9 +106,16 @@ Dev Days workshop app) — it's a self-contained subfolder with its own
         email + password).
      3. [`db/migration_004_section_access.sql`](./db/migration_004_section_access.sql) —
         adds the `section_access` table. **All existing students will
-        start fully locked out of every section** until you grant
-        access from the Users tab — run this only when you're ready to
-        start using the per-section access control.
+        start fully locked out of every section** until the next
+        migration backfills the defaults below (or you grant access
+        manually from the Users tab).
+     4. [`db/migration_005_default_access.sql`](./db/migration_005_default_access.sql) —
+        grants Contact Info, Widening Access, and the Quiz to every
+        **existing** student (new signups get these automatically going
+        forward), and adds the `access_requests` table backing the
+        Notifications tab. Local Induction and Feedback are left locked
+        — grant them per student, or wait for a Request Access
+        notification.
      None of these touch your existing submission data.
 
 ### 3. Add the Gmail App Password
@@ -188,15 +200,27 @@ vercel dev
 
 ## Section access control
 
-Every student starts locked out of all 5 sections (Contact Info,
-Widening Access, Local Induction, Quiz, Feedback) — a section only
-becomes visible/submittable once the admin explicitly grants it for
-that specific student from **Users → Manage access**. This is enforced
-server-side (`api/day1.ts` and `api/feedback.ts` both check the
-`section_access` table before accepting a submission, independent of
-what the UI shows) as well as in the UI (locked sections show "Not yet
-unlocked" instead of a form). Each section can only be submitted once
-per student — resubmitting an already-completed section is rejected.
+Contact Info, Widening Access, and the Quiz are granted to every
+student automatically at signup (`DEFAULT_GRANTED_SECTIONS` in
+`shared/constants.ts`, applied in `api/auth.ts` `handleSignup`). Local
+Induction and Final Day Feedback are held back — the admin must
+explicitly grant each one per student from **Users → Manage access**
+before the student can see/submit that section.
+
+A student who hits a locked section (on the Day 1 hub or `/feedback`)
+sees a **Request Access** button instead of just a locked message.
+Requesting inserts a row into `access_requests`, which shows up for the
+admin in the **Notifications** tab (name, email, section, when) with
+**Grant access** / **Dismiss** actions. Granting access always resolves
+any pending request for that section too, so the notification clears
+itself the moment the admin acts on it.
+
+This is enforced server-side (`api/day1.ts` and `api/feedback.ts` both
+check the `section_access` table before accepting a submission,
+independent of what the UI shows) as well as in the UI (locked sections
+show "Not yet unlocked" instead of a form). Each section can only be
+submitted once per student — resubmitting an already-completed section
+is rejected.
 
 The section keys and their human-readable labels live in
 `SECTION_KEYS`/`SECTION_LABELS` in

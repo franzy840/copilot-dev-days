@@ -9,26 +9,17 @@ import {
   updateUserPassword,
   grantSection,
   revokeSection,
+  listPendingAccessRequests,
+  resolveAccessRequest,
 } from './_lib/db.js';
 import { formatQuizAnswers, formatFeedbackRatings } from './_lib/format.js';
 import { buildWorkbookBuffer } from './_lib/excel.js';
 import { sendAdminNotification } from './_lib/mailer.js';
-import { FEEDBACK_STATEMENTS, QUIZ_QUESTIONS, isSectionKey } from '../shared/constants.js';
+import { FEEDBACK_STATEMENTS, QUIZ_QUESTIONS, AGE_BUCKET_LABELS, isSectionKey } from '../shared/constants.js';
 
 // Consolidated: users, responses, analytics, export, and reset-password all
 // live in one serverless function (Vercel's Hobby plan caps a deployment
 // at 12 functions - one file per action would blow past that fast).
-
-const AGE_BUCKETS: [label: string, min: number, max: number][] = [
-  ['Under 16', 0, 15],
-  ['16-18', 16, 18],
-  ['19-24', 19, 24],
-  ['25-29', 25, 29],
-  ['30-39', 30, 39],
-  ['40-49', 40, 49],
-  ['50-59', 50, 59],
-  ['60+', 60, 200],
-];
 
 function tally(values: Array<string | null>): { label: string; count: number }[] {
   const counts = new Map<string, number>();
@@ -48,6 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (resource === 'responses') return handleResponses(req, res);
     if (resource === 'analytics') return handleAnalytics(res);
     if (resource === 'export') return handleExport(res);
+    if (resource === 'access-requests') return handleAccessRequests(res);
     res.status(400).json({ error: 'Unknown resource.' });
     return;
   }
@@ -57,6 +49,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (body.action === 'reset-password') return handleResetPassword(req, res);
     if (body.action === 'send-export') return handleSendExport(res);
     if (body.action === 'grant-access') return handleGrantAccess(req, res);
+    if (body.action === 'resolve-access-request') return handleResolveAccessRequest(req, res);
     res.status(400).json({ error: 'Unknown action.' });
     return;
   }
@@ -145,13 +138,11 @@ async function handleAnalytics(res: VercelResponse) {
     parents_attended_university: string | null;
   }[];
 
-  const ages = widening
-    .map((r) => (r.age ? Number(r.age) : NaN))
-    .filter((n) => Number.isFinite(n));
-  const ageBuckets = AGE_BUCKETS.map(([label, min, max]) => ({
-    label,
-    count: ages.filter((age) => age >= min && age <= max).length,
-  }));
+  const ages = widening.map((r) => r.age);
+  const ageBuckets = [
+    ...AGE_BUCKET_LABELS.map((label) => ({ label, count: ages.filter((a) => a === label).length })),
+    { label: 'Not answered', count: ages.filter((a) => !a || !(AGE_BUCKET_LABELS as string[]).includes(a)).length },
+  ];
 
   const genderCounts = tally(widening.map((r) => r.gender));
   const transIdentificationCounts = tally(widening.map((r) => r.trans_identification));
@@ -255,6 +246,28 @@ async function handleGrantAccess(req: VercelRequest, res: VercelResponse) {
     await revokeSection(userId, section);
   }
 
+  res.status(200).json({ ok: true });
+}
+
+async function handleAccessRequests(res: VercelResponse) {
+  const requests = await listPendingAccessRequests();
+  res.status(200).json({ requests });
+}
+
+async function handleResolveAccessRequest(req: VercelRequest, res: VercelResponse) {
+  const userId = Number(req.body?.userId);
+  const section = req.body?.section;
+
+  if (!Number.isInteger(userId)) {
+    res.status(400).json({ error: 'Missing or invalid userId.' });
+    return;
+  }
+  if (typeof section !== 'string' || !isSectionKey(section)) {
+    res.status(400).json({ error: 'Unknown section.' });
+    return;
+  }
+
+  await resolveAccessRequest(userId, section);
   res.status(200).json({ ok: true });
 }
 

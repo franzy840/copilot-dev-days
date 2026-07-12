@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { SECTION_LABELS } from '../../shared/constants';
 import type { SectionKey } from '../../shared/constants';
 import { useAuth } from '../lib/AuthContext';
+import RequestAccessButton from '../components/RequestAccessButton';
 
 const DAY1_SECTIONS: { key: SectionKey; path: string; desc: string }[] = [
   { key: 'contactInfo', path: '/day1/contact-info', desc: 'Your contact details and next of kin, for emergency use only.' },
@@ -41,13 +42,21 @@ export default function Day1Page() {
         }
 
         if (!granted) {
+          const pending = user.pendingRequests.includes(s.key);
           return (
-            <div key={s.key} className="home-card home-card-disabled">
+            <div key={s.key} className="home-card home-card-locked">
               <span className="home-card-index">{index}</span>
               <span className="home-card-body">
                 <span className="home-card-title">{label}</span>
-                <span className="home-card-desc">Not yet unlocked. Ask your admin for access.</span>
+                <span className="home-card-desc">
+                  {pending ? 'Requested — waiting for admin approval.' : 'Not yet unlocked.'}
+                </span>
               </span>
+              {pending ? (
+                <span className="badge badge-pending">Requested</span>
+              ) : (
+                <RequestAccessButton section={s.key} />
+              )}
             </div>
           );
         }

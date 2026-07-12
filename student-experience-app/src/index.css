@@ -715,6 +715,33 @@ input:focus-visible,
   border-color: var(--line);
 }
 
+.home-card-locked {
+  cursor: default;
+}
+
+.home-card-locked:hover {
+  transform: none;
+  border-color: var(--line);
+}
+
+.home-card-locked .home-card-title {
+  color: var(--ink-soft);
+}
+
+.home-card-action {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.request-access-error {
+  font-size: 0.76rem;
+  color: var(--danger);
+  text-align: right;
+}
+
 .home-card-done {
   background: var(--primary-tint);
   border-color: var(--primary);

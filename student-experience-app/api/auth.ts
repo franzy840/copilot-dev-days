@@ -1,7 +1,16 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { ADMIN_USERNAME, SECTION_KEYS } from '../shared/constants.js';
+import { ADMIN_USERNAME, SECTION_KEYS, DEFAULT_GRANTED_SECTIONS, isSectionKey } from '../shared/constants.js';
 import { setSessionCookie, clearSessionCookie, getSession, hashPassword, verifyPassword, timingSafeEqual } from './_lib/auth.js';
-import { createUser, findUserByEmail, hasCompletedDay1, hasCompletedFeedback, getGrantedSections, hasSubmittedSection } from './_lib/db.js';
+import {
+  createUser,
+  findUserByEmail,
+  getGrantedSections,
+  hasSubmittedSection,
+  grantSection,
+  isSectionGranted,
+  createAccessRequest,
+  listPendingAccessRequestsForUser,
+} from './_lib/db.js';
 
 // Consolidated: signup, login, admin-login, logout, and session lookup all
 // live in one serverless function (Vercel's Hobby plan caps a deployment
@@ -36,6 +45,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     case 'logout':
       handleLogout(res);
       return;
+    case 'request-access':
+      await handleRequestAccess(req, res);
+      return;
     default:
       res.status(400).json({ error: 'Unknown action.' });
   }
@@ -53,11 +65,10 @@ async function handleMe(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const [day1Completed, feedbackCompleted, grantedSections, completedFlags] = await Promise.all([
-    hasCompletedDay1(session.userId),
-    hasCompletedFeedback(session.userId),
+  const [grantedSections, completedFlags, pendingRequests] = await Promise.all([
     getGrantedSections(session.userId),
     Promise.all(SECTION_KEYS.map((key) => hasSubmittedSection(session.userId, key))),
+    listPendingAccessRequestsForUser(session.userId),
   ]);
   const completedSections = SECTION_KEYS.filter((_, i) => completedFlags[i]);
 
@@ -67,10 +78,9 @@ async function handleMe(req: VercelRequest, res: VercelResponse) {
       id: session.userId,
       name: session.name,
       email: session.email,
-      day1Completed,
-      feedbackCompleted,
       grantedSections,
       completedSections,
+      pendingRequests,
     },
   });
 }
@@ -102,6 +112,7 @@ async function handleSignup(req: VercelRequest, res: VercelResponse) {
 
   const passwordHash = await hashPassword(password);
   const user = await createUser(name, email, passwordHash);
+  await Promise.all(DEFAULT_GRANTED_SECTIONS.map((section) => grantSection(user.id, section)));
 
   setSessionCookie(res, { role: 'student', userId: user.id, name: user.name, email: user.email });
   res.status(200).json({ ok: true });
@@ -155,5 +166,28 @@ async function handleAdminLogin(req: VercelRequest, res: VercelResponse) {
 
 function handleLogout(res: VercelResponse) {
   clearSessionCookie(res);
+  res.status(200).json({ ok: true });
+}
+
+async function handleRequestAccess(req: VercelRequest, res: VercelResponse) {
+  const session = getSession(req);
+  if (!session || session.role !== 'student') {
+    res.status(403).json({ error: 'Log in as a student to request access.' });
+    return;
+  }
+
+  const section = req.body?.section;
+  if (typeof section !== 'string' || !isSectionKey(section)) {
+    res.status(400).json({ error: 'Unknown section.' });
+    return;
+  }
+
+  const granted = await isSectionGranted(session.userId, section);
+  if (granted) {
+    res.status(400).json({ error: 'You already have access to this section.' });
+    return;
+  }
+
+  await createAccessRequest(session.userId, section);
   res.status(200).json({ ok: true });
 }

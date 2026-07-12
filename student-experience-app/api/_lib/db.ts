@@ -158,16 +158,6 @@ export async function updateUserPassword(userId: number, passwordHash: string) {
   await sql`UPDATE users SET password_hash = ${passwordHash} WHERE id = ${userId}`;
 }
 
-export async function hasCompletedDay1(userId: number): Promise<boolean> {
-  const { rows } = await sql`SELECT 1 FROM quiz_responses WHERE user_id = ${userId} LIMIT 1`;
-  return rows.length > 0;
-}
-
-export async function hasCompletedFeedback(userId: number): Promise<boolean> {
-  const { rows } = await sql`SELECT 1 FROM feedback WHERE user_id = ${userId} LIMIT 1`;
-  return rows.length > 0;
-}
-
 // ---- Section access ----
 
 export async function getGrantedSections(userId: number): Promise<string[]> {
@@ -187,10 +177,50 @@ export async function grantSection(userId: number, section: string) {
     INSERT INTO section_access (user_id, section) VALUES (${userId}, ${section})
     ON CONFLICT DO NOTHING
   `;
+  await resolveAccessRequest(userId, section);
 }
 
 export async function revokeSection(userId: number, section: string) {
   await sql`DELETE FROM section_access WHERE user_id = ${userId} AND section = ${section}`;
+}
+
+// ---- Access requests ----
+//
+// A student can ask the admin to unlock a still-locked section (Local
+// Induction / Feedback). One row per unresolved request; resolved_at is
+// set once the admin grants or dismisses it (see grantSection above and
+// resolveAccessRequest below).
+
+export async function createAccessRequest(userId: number, section: string) {
+  await sql`
+    INSERT INTO access_requests (user_id, section) VALUES (${userId}, ${section})
+    ON CONFLICT (user_id, section) WHERE resolved_at IS NULL DO NOTHING
+  `;
+}
+
+export async function resolveAccessRequest(userId: number, section: string) {
+  await sql`
+    UPDATE access_requests SET resolved_at = now()
+    WHERE user_id = ${userId} AND section = ${section} AND resolved_at IS NULL
+  `;
+}
+
+export async function listPendingAccessRequestsForUser(userId: number): Promise<string[]> {
+  const { rows } = await sql`
+    SELECT section FROM access_requests WHERE user_id = ${userId} AND resolved_at IS NULL
+  `;
+  return rows.map((r) => r.section as string);
+}
+
+export async function listPendingAccessRequests() {
+  const { rows } = await sql`
+    SELECT ar.id, ar.section, ar.requested_at, u.id AS user_id, u.name, u.email
+    FROM access_requests ar
+    JOIN users u ON u.id = ar.user_id
+    WHERE ar.resolved_at IS NULL
+    ORDER BY ar.requested_at ASC
+  `;
+  return rows;
 }
 
 // ---- Admin ----

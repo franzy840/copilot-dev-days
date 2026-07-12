@@ -4,6 +4,7 @@ import { FEEDBACK_STATEMENTS, FEEDBACK_OPEN_FIELDS, HOSPITAL_SUGGESTIONS } from 
 import LikertQuestion from '../components/LikertQuestion';
 import FieldSection from '../components/FieldSection';
 import Combobox from '../components/Combobox';
+import RequestAccessButton from '../components/RequestAccessButton';
 import { useAuth } from '../lib/AuthContext';
 
 interface Rating {
@@ -12,7 +13,7 @@ interface Rating {
 }
 
 export default function FeedbackPage() {
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [hospital, setHospital] = useState('');
@@ -26,23 +27,31 @@ export default function FeedbackPage() {
   if (!user || user.role !== 'student') return null; // ProtectedRoute guarantees this in practice
 
   if (!user.grantedSections.includes('feedback')) {
+    const pending = user.pendingRequests.includes('feedback');
     return (
       <div className="page">
         <div className="card">
           <h2>Not yet available</h2>
           <p className="help">
-            Final Day Feedback has not been unlocked for you yet. Ask your admin for access once your
-            placement is coming to an end.
+            Final Day Feedback has not been unlocked for you yet.{' '}
+            {pending ? 'Your request is waiting for admin approval.' : 'You can ask your admin for access below.'}
           </p>
-          <Link to="/day1">
-            <button type="button">Back to Day 1</button>
-          </Link>
+          <div className="actions">
+            <Link to="/day1">
+              <button type="button" className="secondary">Back to Day 1</button>
+            </Link>
+            {pending ? (
+              <span className="badge badge-pending">Requested</span>
+            ) : (
+              <RequestAccessButton section="feedback" />
+            )}
+          </div>
         </div>
       </div>
     );
   }
 
-  if (user.completedSections.includes('feedback')) {
+  if (user.completedSections.includes('feedback') && !done) {
     return (
       <div className="page thank-you">
         <div className="thank-you-badge">✓</div>
@@ -86,6 +95,7 @@ export default function FeedbackPage() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || 'Something went wrong submitting the form.');
       }
+      await refresh();
       setDone(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong submitting the form.');

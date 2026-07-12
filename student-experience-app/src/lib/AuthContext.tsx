@@ -9,10 +9,9 @@ export type AuthUser =
       id: number;
       name: string;
       email: string;
-      day1Completed: boolean;
-      feedbackCompleted: boolean;
       grantedSections: SectionKey[];
       completedSections: SectionKey[];
+      pendingRequests: SectionKey[];
     };
 
 interface AuthContextValue {

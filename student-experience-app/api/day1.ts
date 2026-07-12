@@ -4,6 +4,7 @@ import {
   LOCAL_INDUCTION_FIELDS,
   QUIZ_QUESTIONS,
   SECTION_LABELS,
+  WIDENING_ACCESS_FIELDS,
   isSectionKey,
 } from '../shared/constants.js';
 import {
@@ -66,6 +67,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await insertContactInfo({ userId, studentName, ...contactInfo });
   } else if (section === 'wideningAccess') {
     const wideningAccess = body.wideningAccess ?? {};
+    const errors = missingRequiredFields(WIDENING_ACCESS_FIELDS, wideningAccess);
+    if (errors.length > 0) {
+      res.status(400).json({ error: errors.join(' ') });
+      return;
+    }
     await insertWideningAccess({ userId, studentName, ...wideningAccess });
   } else if (section === 'localInduction') {
     const localInduction = body.localInduction ?? {};

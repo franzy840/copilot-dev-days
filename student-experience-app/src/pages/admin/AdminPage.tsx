@@ -1,14 +1,31 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import UsersTab from './UsersTab';
 import ResponsesTab from './ResponsesTab';
 import AnalyticsTab from './AnalyticsTab';
+import NotificationsTab from './NotificationsTab';
+import type { AccessRequest } from './NotificationsTab';
 
-const TABS = ['Analytics', 'Users', 'Responses'] as const;
+const TABS = ['Analytics', 'Notifications', 'Users', 'Responses'] as const;
 type Tab = (typeof TABS)[number];
 
 export default function AdminPage() {
   const [tab, setTab] = useState<Tab>('Analytics');
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [pendingRequests, setPendingRequests] = useState<AccessRequest[] | null>(null);
+  const [pendingError, setPendingError] = useState('');
+
+  function loadPendingRequests() {
+    setPendingError('');
+    fetch('/api/admin?resource=access-requests', { credentials: 'same-origin' })
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to load access requests.');
+        return res.json();
+      })
+      .then((body) => setPendingRequests(body.requests))
+      .catch((err) => setPendingError(err instanceof Error ? err.message : 'Failed to load access requests.'));
+  }
+
+  useEffect(loadPendingRequests, []);
 
   async function emailExport() {
     setEmailStatus('sending');
@@ -51,13 +68,18 @@ export default function AdminPage() {
       <div className="tab-picker">
         {TABS.map((t) => (
           <button key={t} type="button" className={t === tab ? 'tab-picker-active' : ''} onClick={() => setTab(t)}>
-            {t}
+            {t === 'Notifications' && pendingRequests && pendingRequests.length > 0
+              ? `${t} (${pendingRequests.length})`
+              : t}
           </button>
         ))}
       </div>
 
       <div className="card">
         {tab === 'Analytics' && <AnalyticsTab />}
+        {tab === 'Notifications' && (
+          <NotificationsTab requests={pendingRequests} error={pendingError} onReload={loadPendingRequests} />
+        )}
         {tab === 'Users' && <UsersTab />}
         {tab === 'Responses' && <ResponsesTab />}
       </div>
