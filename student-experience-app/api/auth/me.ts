@@ -10,7 +10,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (session.role === 'admin') {
-    res.status(200).json({ user: { role: 'admin', email: session.email } });
+    res.status(200).json({ user: { role: 'admin', username: session.username } });
     return;
   }
 

@@ -3,7 +3,13 @@
 // means the form the student sees and the columns written to the
 // database/Excel export can never drift apart.
 
+// Where admin notification emails (submissions, urgent alerts) are sent.
 export const ADMIN_EMAIL = 'franzy840@gmail.com';
+
+// Login name for the /admin/login screen. Not an email address - just a
+// username, checked against ADMIN_PASSWORD (env var). Separate from
+// ADMIN_EMAIL above so the login name doesn't have to be an email.
+export const ADMIN_USERNAME = 'hansel';
 
 export type FieldType = 'text' | 'email' | 'tel' | 'date' | 'number' | 'textarea' | 'select';
 

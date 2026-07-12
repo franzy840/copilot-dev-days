@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { ADMIN_EMAIL } from '../../shared/constants.js';
+import { ADMIN_USERNAME } from '../../shared/constants.js';
 import { setSessionCookie, timingSafeEqual } from '../_lib/auth.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -9,7 +9,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const body = req.body ?? {};
-  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+  const username = typeof body.username === 'string' ? body.username.trim().toLowerCase() : '';
   const password = typeof body.password === 'string' ? body.password : '';
 
   const adminPassword = process.env.ADMIN_PASSWORD;
@@ -18,14 +18,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const emailMatches = email.length > 0 && timingSafeEqual(email, ADMIN_EMAIL.toLowerCase());
+  const usernameMatches = username.length > 0 && timingSafeEqual(username, ADMIN_USERNAME.toLowerCase());
   const passwordMatches = password.length > 0 && timingSafeEqual(password, adminPassword);
 
-  if (!emailMatches || !passwordMatches) {
-    res.status(401).json({ error: 'Incorrect email or password.' });
+  if (!usernameMatches || !passwordMatches) {
+    res.status(401).json({ error: 'Incorrect username or password.' });
     return;
   }
 
-  setSessionCookie(res, { role: 'admin', email: ADMIN_EMAIL });
+  setSessionCookie(res, { role: 'admin', username: ADMIN_USERNAME });
   res.status(200).json({ ok: true });
 }

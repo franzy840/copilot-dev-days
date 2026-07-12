@@ -6,7 +6,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export type Session =
   | { role: 'student'; userId: number; name: string; email: string }
-  | { role: 'admin'; email: string };
+  | { role: 'admin'; username: string };
 
 const COOKIE_NAME = 'wex_session';
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days - a work experience week plus margin

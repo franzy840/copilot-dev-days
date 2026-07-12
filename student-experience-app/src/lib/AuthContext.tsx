@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import type { ReactNode } from 'react';
 
 export type AuthUser =
-  | { role: 'admin'; email: string }
+  | { role: 'admin'; username: string }
   | { role: 'student'; id: number; name: string; email: string; day1Completed: boolean; feedbackCompleted: boolean };
 
 interface AuthContextValue {

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -19,7 +19,7 @@ export default function AdminLoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -41,8 +41,8 @@ export default function AdminLoginPage() {
         {error && <div className="error-banner">{error}</div>}
         <form onSubmit={submit}>
           <div className="field">
-            <label htmlFor="email">Email</label>
-            <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <label htmlFor="username">Username</label>
+            <input id="username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
           </div>
           <div className="field">
             <label htmlFor="password">Password</label>

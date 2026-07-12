@@ -24,9 +24,11 @@ fires immediately.
 
 ## Admin dashboard (`/admin`)
 
-Sign in at `/admin/login` with `franzy840@gmail.com` and the
+Sign in at `/admin/login` with username `hansel` (see `ADMIN_USERNAME`
+in `shared/constants.ts` if that ever needs to change) and the
 `ADMIN_PASSWORD` you set (see setup below — this is a separate
-env-var-based login, not a database account). Three tabs:
+env-var-based login, not a database account, and not the same as
+`ADMIN_EMAIL` which is only where notification emails go). Three tabs:
 
 - **Analytics** — registered/completed counts, quiz score distribution,
   average feedback rating per statement, and Widening Access breakdowns
@@ -112,8 +114,8 @@ In the same **Settings → Environment Variables** screen, add two more
   `openssl rand -hex 32` (or any password generator), and keep it
   secret; anyone with it could forge a login session.
 - `ADMIN_PASSWORD` = a password of your choosing for the admin
-  dashboard. You'll log in at `/admin/login` with
-  `franzy840@gmail.com` + this password.
+  dashboard. You'll log in at `/admin/login` with username `hansel`
+  (see `ADMIN_USERNAME` in `shared/constants.ts`) + this password.
 
 ### 5. Deploy
 
@@ -150,10 +152,10 @@ vercel dev
 - Only you (the Vercel project owner) can query the database, read the
   deployed function logs, or sign in to `/admin` — students only ever
   see the public login + forms.
-- The admin dashboard (`/admin`) is a second, separate login (email +
-  `ADMIN_PASSWORD`) — it's not a student account with elevated
-  permissions, so there's no risk of a student account accidentally
-  gaining admin access.
+- The admin dashboard (`/admin`) is a second, separate login (username
+  `hansel` + `ADMIN_PASSWORD`) — it's not a student account with
+  elevated permissions, so there's no risk of a student account
+  accidentally gaining admin access.
 - Only `franzy840@gmail.com` ever receives a notification email from
   this app — see `ADMIN_EMAIL` in `shared/constants.ts` if that ever
   needs to change. Students never receive any email from the app —
