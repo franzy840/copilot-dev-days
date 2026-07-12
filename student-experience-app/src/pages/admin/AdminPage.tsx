@@ -13,7 +13,12 @@ export default function AdminPage() {
   async function emailExport() {
     setEmailStatus('sending');
     try {
-      const res = await fetch('/api/admin/send-export', { method: 'POST', credentials: 'same-origin' });
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ action: 'send-export' }),
+      });
       if (!res.ok) throw new Error();
       setEmailStatus('sent');
     } catch {
@@ -26,7 +31,7 @@ export default function AdminPage() {
   return (
     <div className="page page-wide">
       <div className="admin-toolbar">
-        <a href="/api/admin/export" className="secondary-link-button">
+        <a href="/api/admin?resource=export" className="secondary-link-button">
           Download Excel
         </a>
         <button type="button" className="secondary" onClick={emailExport} disabled={emailStatus === 'sending'}>

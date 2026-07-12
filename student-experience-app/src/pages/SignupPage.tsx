@@ -16,11 +16,11 @@ export default function SignupPage() {
     setSubmitting(true);
     setError('');
     try {
-      const res = await fetch('/api/auth/signup', {
+      const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ action: 'signup', name, email, password }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));

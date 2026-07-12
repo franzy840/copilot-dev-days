@@ -17,7 +17,7 @@ export default function ResponsesTab() {
   useEffect(() => {
     setRows(null);
     setError('');
-    fetch(`/api/admin/responses?table=${table}`, { credentials: 'same-origin' })
+    fetch(`/api/admin?resource=responses&table=${table}`, { credentials: 'same-origin' })
       .then((res) => {
         if (!res.ok) throw new Error('Failed to load responses.');
         return res.json();

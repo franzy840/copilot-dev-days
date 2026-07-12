@@ -17,7 +17,7 @@ export default function UsersTab() {
 
   function loadUsers() {
     setUsers(null);
-    fetch('/api/admin/users', { credentials: 'same-origin' })
+    fetch('/api/admin?resource=users', { credentials: 'same-origin' })
       .then((res) => {
         if (!res.ok) throw new Error('Failed to load users.');
         return res.json();
@@ -32,11 +32,11 @@ export default function UsersTab() {
     setResetFor(userId);
     setError('');
     try {
-      const res = await fetch('/api/admin/reset-password', {
+      const res = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ action: 'reset-password', userId }),
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error || 'Failed to reset password.');

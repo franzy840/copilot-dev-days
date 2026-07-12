@@ -18,7 +18,7 @@ export default function AnalyticsTab() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch('/api/admin/analytics', { credentials: 'same-origin' })
+    fetch('/api/admin?resource=analytics', { credentials: 'same-origin' })
       .then((res) => {
         if (!res.ok) throw new Error('Failed to load analytics.');
         return res.json();

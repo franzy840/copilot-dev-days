@@ -24,11 +24,11 @@ export default function LoginPage({ defaultTab = 'student' }: Props) {
     setSubmitting(true);
     setError('');
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ email: studentEmail, password: studentPassword }),
+        body: JSON.stringify({ action: 'login', email: studentEmail, password: studentPassword }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -48,11 +48,11 @@ export default function LoginPage({ defaultTab = 'student' }: Props) {
     setSubmitting(true);
     setError('');
     try {
-      const res = await fetch('/api/auth/admin-login', {
+      const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ username: adminUsername, password: adminPassword }),
+        body: JSON.stringify({ action: 'admin-login', username: adminUsername, password: adminPassword }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
