@@ -4,7 +4,6 @@ import Day1Page from './pages/Day1Page';
 import FeedbackPage from './pages/FeedbackPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
-import AdminLoginPage from './pages/AdminLoginPage';
 import AdminPage from './pages/admin/AdminPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { useAuth } from './lib/AuthContext';
@@ -51,7 +50,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
-        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="/admin/login" element={<LoginPage defaultTab="admin" />} />
         <Route
           path="/day1"
           element={
