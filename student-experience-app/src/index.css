@@ -705,16 +705,6 @@ input:focus-visible,
   color: var(--primary);
 }
 
-.home-card-disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.home-card-disabled:hover {
-  transform: none;
-  border-color: var(--line);
-}
-
 .home-card-locked {
   cursor: default;
 }

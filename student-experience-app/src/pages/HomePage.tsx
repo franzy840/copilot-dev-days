@@ -62,43 +62,31 @@ export default function HomePage() {
     <div className="page home-links">
       <p className="home-intro">Welcome back, {user.name}. Pick the form for where you are in your placement.</p>
 
-      {day1AnyGranted ? (
-        <Link to="/day1" className="home-card">
-          <span className="home-card-index">01</span>
-          <span className="home-card-body">
-            <span className="home-card-title">Day 1{day1AllDone ? ' — Completed' : ''}</span>
-            <span className="home-card-desc">Contact info, widening access survey, local induction &amp; safety quiz — about 10 minutes.</span>
+      <Link to="/day1" className="home-card">
+        <span className="home-card-index">01</span>
+        <span className="home-card-body">
+          <span className="home-card-title">Day 1{day1AllDone ? ' — Completed' : ''}</span>
+          <span className="home-card-desc">
+            {day1AnyGranted
+              ? 'Contact info, widening access survey, local induction & safety quiz — about 10 minutes.'
+              : 'Not yet unlocked — open to request access.'}
           </span>
-          <span className="home-card-arrow" aria-hidden="true">→</span>
-        </Link>
-      ) : (
-        <div className="home-card home-card-disabled">
-          <span className="home-card-index">01</span>
-          <span className="home-card-body">
-            <span className="home-card-title">Day 1</span>
-            <span className="home-card-desc">Not yet unlocked. Ask your admin for access.</span>
-          </span>
-        </div>
-      )}
+        </span>
+        <span className="home-card-arrow" aria-hidden="true">→</span>
+      </Link>
 
-      {feedbackGranted ? (
-        <Link to="/feedback" className="home-card">
-          <span className="home-card-index">02</span>
-          <span className="home-card-body">
-            <span className="home-card-title">Final Day{feedbackDone ? ' — Completed' : ''}</span>
-            <span className="home-card-desc">Work experience feedback — help us improve future placements.</span>
+      <Link to="/feedback" className="home-card">
+        <span className="home-card-index">02</span>
+        <span className="home-card-body">
+          <span className="home-card-title">Final Day{feedbackDone ? ' — Completed' : ''}</span>
+          <span className="home-card-desc">
+            {feedbackGranted
+              ? 'Work experience feedback — help us improve future placements.'
+              : 'Not yet unlocked — open to request access.'}
           </span>
-          <span className="home-card-arrow" aria-hidden="true">→</span>
-        </Link>
-      ) : (
-        <div className="home-card home-card-disabled">
-          <span className="home-card-index">02</span>
-          <span className="home-card-body">
-            <span className="home-card-title">Final Day</span>
-            <span className="home-card-desc">Not yet unlocked. Ask your admin for access.</span>
-          </span>
-        </div>
-      )}
+        </span>
+        <span className="home-card-arrow" aria-hidden="true">→</span>
+      </Link>
     </div>
   );
 }
