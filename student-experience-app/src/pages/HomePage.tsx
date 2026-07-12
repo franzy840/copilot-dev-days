@@ -15,12 +15,20 @@ export default function HomePage() {
   if (!user) {
     return (
       <div className="page home-links">
-        <p className="home-intro">Log in with your email to get started.</p>
+        <p className="home-intro">Log in to get started.</p>
         <Link to="/login" className="home-card">
           <span className="home-card-index">01</span>
           <span className="home-card-body">
             <span className="home-card-title">Student Login</span>
-            <span className="home-card-desc">We'll email you a one-time login link — no password needed.</span>
+            <span className="home-card-desc">Already have an account? Log in with your email and password.</span>
+          </span>
+          <span className="home-card-arrow" aria-hidden="true">→</span>
+        </Link>
+        <Link to="/signup" className="home-card">
+          <span className="home-card-index">02</span>
+          <span className="home-card-body">
+            <span className="home-card-title">Create Account</span>
+            <span className="home-card-desc">First time here? Set up your name, email and a password.</span>
           </span>
           <span className="home-card-arrow" aria-hidden="true">→</span>
         </Link>

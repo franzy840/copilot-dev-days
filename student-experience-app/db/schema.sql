@@ -6,28 +6,19 @@
 -- each block below separately, in order.
 --
 -- Already ran an earlier version of this file against a live database?
--- Use db/migration_002_auth.sql instead - it only adds what's new
--- (users, login_tokens, user_id columns) without touching existing data.
+-- Use db/migration_002_auth.sql and db/migration_003_passwords.sql
+-- instead - they only add what's new, without touching existing data.
 
 -- 1
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
+  password_hash TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- 2
-CREATE TABLE IF NOT EXISTS login_tokens (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL REFERENCES users(id),
-  token TEXT UNIQUE NOT NULL,
-  expires_at TIMESTAMPTZ NOT NULL,
-  used_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
--- 3
 -- Five separate tables so Day 1's four topics are stored separately even
 -- though students fill them in as one combined form, plus one table for
 -- the Final Day feedback form.
@@ -50,7 +41,7 @@ CREATE TABLE IF NOT EXISTS contact_info (
   nok_home_phone TEXT
 );
 
--- 4
+-- 3
 CREATE TABLE IF NOT EXISTS widening_access (
   id SERIAL PRIMARY KEY,
   submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -68,7 +59,7 @@ CREATE TABLE IF NOT EXISTS widening_access (
   parents_attended_university TEXT
 );
 
--- 5
+-- 4
 CREATE TABLE IF NOT EXISTS local_induction (
   id SERIAL PRIMARY KEY,
   submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -81,7 +72,7 @@ CREATE TABLE IF NOT EXISTS local_induction (
   induction_date DATE NOT NULL
 );
 
--- 6
+-- 5
 CREATE TABLE IF NOT EXISTS quiz_responses (
   id SERIAL PRIMARY KEY,
   submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -92,7 +83,7 @@ CREATE TABLE IF NOT EXISTS quiz_responses (
   total INTEGER NOT NULL
 );
 
--- 7
+-- 6
 CREATE TABLE IF NOT EXISTS feedback (
   id SERIAL PRIMARY KEY,
   submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -112,8 +103,8 @@ CREATE TABLE IF NOT EXISTS feedback (
   other_comments TEXT
 );
 
--- 8
+-- 7
 CREATE INDEX IF NOT EXISTS idx_quiz_responses_user_id ON quiz_responses(user_id);
 
--- 9
+-- 8
 CREATE INDEX IF NOT EXISTS idx_feedback_user_id ON feedback(user_id);

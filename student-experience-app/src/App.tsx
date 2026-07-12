@@ -3,6 +3,7 @@ import HomePage from './pages/HomePage';
 import Day1Page from './pages/Day1Page';
 import FeedbackPage from './pages/FeedbackPage';
 import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminPage from './pages/admin/AdminPage';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -49,6 +50,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route
           path="/day1"

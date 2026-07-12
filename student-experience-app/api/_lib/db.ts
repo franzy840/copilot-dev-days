@@ -132,6 +132,7 @@ export interface DbUser {
   id: number;
   name: string;
   email: string;
+  password_hash: string | null;
   created_at: string;
 }
 
@@ -145,34 +146,16 @@ export async function findUserById(id: number): Promise<DbUser | undefined> {
   return rows[0];
 }
 
-/** Creates the user on first login, otherwise keeps their existing name (whatever they signed up with). */
-export async function upsertUser(name: string, email: string): Promise<DbUser> {
-  const normalizedEmail = email.toLowerCase();
-  const existing = await findUserByEmail(normalizedEmail);
-  if (existing) return existing;
+export async function createUser(name: string, email: string, passwordHash: string): Promise<DbUser> {
   const { rows } = await sql<DbUser>`
-    INSERT INTO users (name, email) VALUES (${name}, ${normalizedEmail})
+    INSERT INTO users (name, email, password_hash) VALUES (${name}, ${email.toLowerCase()}, ${passwordHash})
     RETURNING *
   `;
   return rows[0];
 }
 
-export async function createLoginToken(userId: number, token: string, expiresAt: Date) {
-  await sql`
-    INSERT INTO login_tokens (user_id, token, expires_at)
-    VALUES (${userId}, ${token}, ${expiresAt.toISOString()})
-  `;
-}
-
-/** Atomically marks a token used and returns the user id, or null if invalid/expired/already used. */
-export async function consumeLoginToken(token: string): Promise<number | null> {
-  const { rows } = await sql<{ user_id: number }>`
-    UPDATE login_tokens
-    SET used_at = now()
-    WHERE token = ${token} AND used_at IS NULL AND expires_at > now()
-    RETURNING user_id
-  `;
-  return rows[0]?.user_id ?? null;
+export async function updateUserPassword(userId: number, passwordHash: string) {
+  await sql`UPDATE users SET password_hash = ${passwordHash} WHERE id = ${userId}`;
 }
 
 export async function hasCompletedDay1(userId: number): Promise<boolean> {

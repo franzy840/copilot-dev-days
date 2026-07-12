@@ -11,6 +11,7 @@
   "dependencies": {
     "@vercel/node": "^3.2.24",
     "@vercel/postgres": "^0.10.0",
+    "bcryptjs": "^2.4.3",
     "cookie": "^1.0.2",
     "exceljs": "^4.4.0",
     "jsonwebtoken": "^9.0.2",
@@ -20,6 +21,7 @@
     "react-router-dom": "^6.28.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^20.17.6",
     "@types/nodemailer": "^6.4.16",

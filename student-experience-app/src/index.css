@@ -935,3 +935,42 @@ input:focus-visible,
   min-width: 2.5ch;
   text-align: right;
 }
+
+/* ---- Misc ---- */
+
+.text-link {
+  align-self: center;
+  color: var(--primary-dark);
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.text-link:hover {
+  text-decoration: underline;
+}
+
+.table-action {
+  padding: 6px 14px;
+  font-size: 0.8rem;
+}
+
+.reset-result {
+  background: var(--accent-tint);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  margin-bottom: 18px;
+}
+
+.reset-result code {
+  display: inline-block;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  margin: 4px 0 8px;
+}

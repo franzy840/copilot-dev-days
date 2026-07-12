@@ -3,9 +3,9 @@
 A web app for collecting Work Experience student paperwork, with student
 accounts and an admin dashboard:
 
-- **`/login`** — student sign-in. Enter name + email, get a one-time
-  login link by email (no password). New email = new account, created
-  automatically.
+- **`/signup`** / **`/login`** — student accounts: email + password, no
+  email verification step. If a student loses their password, the admin
+  resets it from the dashboard (see below) — no email dependency.
 - **`/day1`** — logged-in students only. Contact Info, the Widening
   Access Participation Survey, Local Induction sign-off, and the safety
   Induction Quiz (auto-graded). Submitted together as one flow, but
@@ -32,7 +32,9 @@ env-var-based login, not a database account). Three tabs:
   average feedback rating per statement, and Widening Access breakdowns
   (age, gender, ethnicity, disabilities), all as simple bar charts.
 - **Users** — every student account, with Day 1 / Feedback completion
-  status.
+  status and a **Reset password** button per row (generates a new
+  password shown once on screen — copy it and pass it to the student
+  yourself; there's no email step to fail).
 - **Responses** — the raw rows for each of the 5 tables, joined with the
   submitting student's account email.
 
@@ -48,9 +50,10 @@ Dev Days workshop app) — it's a self-contained subfolder with its own
 - Excel export: `exceljs`, generated on demand from the database.
 - Email: `nodemailer` over Gmail SMTP, using an **App Password** —
   not your normal Gmail password.
-- Auth: passwordless magic-link login for students (`jsonwebtoken` +
-  `cookie`, one-time tokens in a `login_tokens` table); env-var password
-  login for the single admin account (no database row for admin).
+- Auth: email + password for students (`bcryptjs` hashing,
+  `jsonwebtoken` + `cookie` for the session), with admin-triggered
+  resets (no email step). Env-var password login for the single admin
+  account (no database row for admin).
 
 ## One-time deployment setup
 
@@ -75,12 +78,18 @@ Dev Days workshop app) — it's a self-contained subfolder with its own
    whichever provider you attached, it can't run multiple statements
    pasted together at once, so run each numbered block separately):
    - **New database**: run every block in [`db/schema.sql`](./db/schema.sql)
-     in order — creates all 7 tables (including `users`/`login_tokens`).
+     in order — creates all 6 tables (including `users` with its
+     `password_hash` column).
    - **Already ran an older version of this file against a live
-     database?** Run [`db/migration_002_auth.sql`](./db/migration_002_auth.sql)
-     instead — it only adds what's new (`users`, `login_tokens`, and a
-     `user_id` column on each existing table) without touching your
-     existing rows.
+     database?** Run, in order:
+     1. [`db/migration_002_auth.sql`](./db/migration_002_auth.sql) —
+        adds `users`/`login_tokens` and a `user_id` column on each
+        existing table.
+     2. [`db/migration_003_passwords.sql`](./db/migration_003_passwords.sql) —
+        adds `users.password_hash` and drops the now-unused
+        `login_tokens` table (magic-link login was replaced with
+        email + password).
+     Neither touches your existing submission data.
 
 ### 3. Add the Gmail App Password
 
@@ -112,9 +121,9 @@ Trigger a deploy (Vercel does this automatically on every push to the
 branch/PR, or click **Deploy** in the dashboard). Once live, Vercel
 gives you a public URL like `https://student-experience-app.vercel.app`.
 
-- Link to give students: `https://<your-project>.vercel.app/login` — they
-  sign up on first visit, then `/day1` and `/feedback` (once unlocked)
-  are reachable from the home page while logged in.
+- Link to give students: `https://<your-project>.vercel.app/signup` —
+  they create their account there, then `/day1` and `/feedback` (once
+  unlocked) are reachable from the home page while logged in.
 - Your admin login: `https://<your-project>.vercel.app/admin/login`
 
 You can also add a custom domain under **Settings → Domains** if you'd
@@ -147,8 +156,13 @@ vercel dev
   gaining admin access.
 - Only `franzy840@gmail.com` ever receives a notification email from
   this app — see `ADMIN_EMAIL` in `shared/constants.ts` if that ever
-  needs to change. Students only ever receive their own login-link
-  email, sent to the address they typed in.
+  needs to change. Students never receive any email from the app —
+  login is email + password, and password resets happen entirely on
+  the admin dashboard.
+- Password resets are admin-only and require the admin to relay the new
+  password to the student out of band (in person, chat, etc) — there's
+  no self-service "forgot password" flow, by design, since email
+  delivery to students was the whole problem this replaced.
 - Widening Access answers have no identifiers beyond `student_name` and
   are optional per-question ("Prefer not to say" is always offered) —
   per the source NHS document, consider periodically clearing that

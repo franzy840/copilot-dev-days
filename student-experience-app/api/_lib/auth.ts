@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import { parse as parseCookie, serialize as serializeCookie } from 'cookie';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
@@ -86,8 +87,21 @@ export function requireAdmin(req: VercelRequest, res: VercelResponse): Session |
   return session;
 }
 
-export function generateMagicToken(): string {
-  return crypto.randomBytes(32).toString('hex');
+export async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 10);
+}
+
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(password, hash);
+}
+
+const TEMP_PASSWORD_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'; // no 0/O/1/I/l - avoids miscopying
+
+/** Short, easy-to-read-aloud password for admin-issued resets. */
+export function generateTempPassword(length = 10): string {
+  return Array.from(crypto.randomBytes(length))
+    .map((b) => TEMP_PASSWORD_ALPHABET[b % TEMP_PASSWORD_ALPHABET.length])
+    .join('');
 }
 
 export function timingSafeEqual(a: string, b: string): boolean {
