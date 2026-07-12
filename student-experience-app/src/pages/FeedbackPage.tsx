@@ -25,19 +25,29 @@ export default function FeedbackPage() {
 
   if (!user || user.role !== 'student') return null; // ProtectedRoute guarantees this in practice
 
-  if (!user.day1Completed) {
+  if (!user.grantedSections.includes('feedback')) {
     return (
       <div className="page">
         <div className="card">
-          <h2>Complete Day 1 first</h2>
+          <h2>Not yet available</h2>
           <p className="help">
-            You'll need to finish your Day 1 forms (contact info, widening access, local induction and
-            the induction quiz) before you can submit Final Day feedback.
+            Final Day Feedback has not been unlocked for you yet. Ask your admin for access once your
+            placement is coming to an end.
           </p>
           <Link to="/day1">
-            <button type="button">Go to Day 1 forms</button>
+            <button type="button">Back to Day 1</button>
           </Link>
         </div>
+      </div>
+    );
+  }
+
+  if (user.completedSections.includes('feedback')) {
+    return (
+      <div className="page thank-you">
+        <div className="thank-you-badge">✓</div>
+        <h2>Already submitted</h2>
+        <p>You've already submitted your Final Day feedback. Thank you!</p>
       </div>
     );
   }

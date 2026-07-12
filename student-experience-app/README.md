@@ -6,13 +6,18 @@ accounts and an admin dashboard:
 - **`/signup`** / **`/login`** — student accounts: email + password, no
   email verification step. If a student loses their password, the admin
   resets it from the dashboard (see below) — no email dependency.
-- **`/day1`** — logged-in students only. Contact Info, the Widening
-  Access Participation Survey, Local Induction sign-off, and the safety
-  Induction Quiz (auto-graded). Submitted together as one flow, but
-  stored in **separate database tables / Excel tabs** per topic.
-- **`/feedback`** — logged-in students only, and **locked until Day 1
-  is completed** (enforced both in the UI and server-side in
-  `api/feedback.ts`).
+- **`/day1`** — logged-in students only. A hub linking to 4 independent
+  sections — Contact Info, the Widening Access Participation Survey,
+  Local Induction sign-off, and the safety Induction Quiz (auto-graded) —
+  each stored in its own database table / Excel tab. **Every section
+  starts locked for every student.** The admin unlocks each section
+  individually per student from the Users tab (see below); a student
+  only sees/can submit a section once it's been granted, and each
+  section can only be submitted once.
+- **`/feedback`** — logged-in students only, and **locked until the
+  admin grants the Feedback section** for that student (enforced both
+  in the UI and server-side in `api/feedback.ts`) — independent of
+  Day 1 section access.
 - **`/admin/login`** + **`/admin`** — admin-only dashboard (see below).
 
 Every submission is written to a Postgres database and triggers an
@@ -34,9 +39,11 @@ env-var-based login, not a database account, and not the same as
   average feedback rating per statement, and Widening Access breakdowns
   (age, gender, ethnicity, disabilities), all as simple bar charts.
 - **Users** — every student account, with Day 1 / Feedback completion
-  status and a **Reset password** button per row (generates a new
-  password shown once on screen — copy it and pass it to the student
-  yourself; there's no email step to fail).
+  status, a **Manage access** toggle panel per row (5 switches — one
+  per section — to grant/revoke that student's access; a "Submitted"
+  badge shows once they've completed it), and a **Reset password**
+  button (generates a new password shown once on screen — copy it and
+  pass it to the student yourself; there's no email step to fail).
 - **Responses** — the raw rows for each of the 5 tables, joined with the
   submitting student's account email.
 
@@ -80,8 +87,9 @@ Dev Days workshop app) — it's a self-contained subfolder with its own
    whichever provider you attached, it can't run multiple statements
    pasted together at once, so run each numbered block separately):
    - **New database**: run every block in [`db/schema.sql`](./db/schema.sql)
-     in order — creates all 6 tables (including `users` with its
-     `password_hash` column).
+     in order — creates all 7 tables (including `users` with its
+     `password_hash` column, and `section_access` for per-student
+     section unlocking).
    - **Already ran an older version of this file against a live
      database?** Run, in order:
      1. [`db/migration_002_auth.sql`](./db/migration_002_auth.sql) —
@@ -91,7 +99,12 @@ Dev Days workshop app) — it's a self-contained subfolder with its own
         adds `users.password_hash` and drops the now-unused
         `login_tokens` table (magic-link login was replaced with
         email + password).
-     Neither touches your existing submission data.
+     3. [`db/migration_004_section_access.sql`](./db/migration_004_section_access.sql) —
+        adds the `section_access` table. **All existing students will
+        start fully locked out of every section** until you grant
+        access from the Users tab — run this only when you're ready to
+        start using the per-section access control.
+     None of these touch your existing submission data.
 
 ### 3. Add the Gmail App Password
 
@@ -172,6 +185,22 @@ vercel dev
 - Contact info and next-of-kin phone numbers are sensitive — don't add
   extra collaborators to the Vercel project or database without
   thinking about who needs access to that data.
+
+## Section access control
+
+Every student starts locked out of all 5 sections (Contact Info,
+Widening Access, Local Induction, Quiz, Feedback) — a section only
+becomes visible/submittable once the admin explicitly grants it for
+that specific student from **Users → Manage access**. This is enforced
+server-side (`api/day1.ts` and `api/feedback.ts` both check the
+`section_access` table before accepting a submission, independent of
+what the UI shows) as well as in the UI (locked sections show "Not yet
+unlocked" instead of a form). Each section can only be submitted once
+per student — resubmitting an already-completed section is rejected.
+
+The section keys and their human-readable labels live in
+`SECTION_KEYS`/`SECTION_LABELS` in
+[`shared/constants.ts`](./shared/constants.ts).
 
 ## Changing the questions
 

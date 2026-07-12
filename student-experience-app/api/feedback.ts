@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { FEEDBACK_STATEMENTS, CONCERN_FIELD_NAME } from '../shared/constants.js';
-import { insertFeedback, hasCompletedDay1 } from './_lib/db.js';
+import { FEEDBACK_STATEMENTS, CONCERN_FIELD_NAME, SECTION_LABELS } from '../shared/constants.js';
+import { insertFeedback, isSectionGranted, hasSubmittedSection } from './_lib/db.js';
 import { sendAdminNotification, sendUrgentAlert } from './_lib/mailer.js';
 import { requireAuth } from './_lib/auth.js';
 
@@ -17,9 +17,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const day1Done = await hasCompletedDay1(session.userId);
-  if (!day1Done) {
-    res.status(403).json({ error: 'Please complete your Day 1 forms before submitting feedback.' });
+  const granted = await isSectionGranted(session.userId, 'feedback');
+  if (!granted) {
+    res.status(403).json({ error: `${SECTION_LABELS.feedback} has not been unlocked for you yet. Ask your admin for access.` });
+    return;
+  }
+
+  const alreadySubmitted = await hasSubmittedSection(session.userId, 'feedback');
+  if (alreadySubmitted) {
+    res.status(409).json({ error: `You have already submitted ${SECTION_LABELS.feedback}.` });
     return;
   }
 

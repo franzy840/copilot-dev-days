@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { ADMIN_USERNAME } from '../shared/constants.js';
+import { ADMIN_USERNAME, SECTION_KEYS } from '../shared/constants.js';
 import { setSessionCookie, clearSessionCookie, getSession, hashPassword, verifyPassword, timingSafeEqual } from './_lib/auth.js';
-import { createUser, findUserByEmail, hasCompletedDay1, hasCompletedFeedback } from './_lib/db.js';
+import { createUser, findUserByEmail, hasCompletedDay1, hasCompletedFeedback, getGrantedSections, hasSubmittedSection } from './_lib/db.js';
 
 // Consolidated: signup, login, admin-login, logout, and session lookup all
 // live in one serverless function (Vercel's Hobby plan caps a deployment
@@ -53,10 +53,13 @@ async function handleMe(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const [day1Completed, feedbackCompleted] = await Promise.all([
+  const [day1Completed, feedbackCompleted, grantedSections, completedFlags] = await Promise.all([
     hasCompletedDay1(session.userId),
     hasCompletedFeedback(session.userId),
+    getGrantedSections(session.userId),
+    Promise.all(SECTION_KEYS.map((key) => hasSubmittedSection(session.userId, key))),
   ]);
+  const completedSections = SECTION_KEYS.filter((_, i) => completedFlags[i]);
 
   res.status(200).json({
     user: {
@@ -66,6 +69,8 @@ async function handleMe(req: VercelRequest, res: VercelResponse) {
       email: session.email,
       day1Completed,
       feedbackCompleted,
+      grantedSections,
+      completedSections,
     },
   });
 }

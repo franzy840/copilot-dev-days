@@ -1,10 +1,19 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { requireAdmin, hashPassword, generateTempPassword } from './_lib/auth.js';
-import { listUsersForAdmin, fetchTableForAdmin, isAdminTableKey, fetchAnalytics, findUserById, updateUserPassword } from './_lib/db.js';
+import {
+  listUsersForAdmin,
+  fetchTableForAdmin,
+  isAdminTableKey,
+  fetchAnalytics,
+  findUserById,
+  updateUserPassword,
+  grantSection,
+  revokeSection,
+} from './_lib/db.js';
 import { formatQuizAnswers, formatFeedbackRatings } from './_lib/format.js';
 import { buildWorkbookBuffer } from './_lib/excel.js';
 import { sendAdminNotification } from './_lib/mailer.js';
-import { FEEDBACK_STATEMENTS, QUIZ_QUESTIONS } from '../shared/constants.js';
+import { FEEDBACK_STATEMENTS, QUIZ_QUESTIONS, isSectionKey } from '../shared/constants.js';
 
 // Consolidated: users, responses, analytics, export, and reset-password all
 // live in one serverless function (Vercel's Hobby plan caps a deployment
@@ -47,6 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const body = req.body ?? {};
     if (body.action === 'reset-password') return handleResetPassword(req, res);
     if (body.action === 'send-export') return handleSendExport(res);
+    if (body.action === 'grant-access') return handleGrantAccess(req, res);
     res.status(400).json({ error: 'Unknown action.' });
     return;
   }
@@ -213,6 +223,39 @@ async function handleResetPassword(req: VercelRequest, res: VercelResponse) {
   await updateUserPassword(userId, await hashPassword(tempPassword));
 
   res.status(200).json({ ok: true, tempPassword, name: user.name, email: user.email });
+}
+
+async function handleGrantAccess(req: VercelRequest, res: VercelResponse) {
+  const userId = Number(req.body?.userId);
+  const section = req.body?.section;
+  const granted = req.body?.granted;
+
+  if (!Number.isInteger(userId)) {
+    res.status(400).json({ error: 'Missing or invalid userId.' });
+    return;
+  }
+  if (typeof section !== 'string' || !isSectionKey(section)) {
+    res.status(400).json({ error: 'Unknown section.' });
+    return;
+  }
+  if (typeof granted !== 'boolean') {
+    res.status(400).json({ error: 'Missing or invalid granted flag.' });
+    return;
+  }
+
+  const user = await findUserById(userId);
+  if (!user) {
+    res.status(404).json({ error: 'User not found.' });
+    return;
+  }
+
+  if (granted) {
+    await grantSection(userId, section);
+  } else {
+    await revokeSection(userId, section);
+  }
+
+  res.status(200).json({ ok: true });
 }
 
 async function handleSendExport(res: VercelResponse) {

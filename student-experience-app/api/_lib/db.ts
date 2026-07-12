@@ -168,6 +168,31 @@ export async function hasCompletedFeedback(userId: number): Promise<boolean> {
   return rows.length > 0;
 }
 
+// ---- Section access ----
+
+export async function getGrantedSections(userId: number): Promise<string[]> {
+  const { rows } = await sql`SELECT section FROM section_access WHERE user_id = ${userId}`;
+  return rows.map((r) => r.section as string);
+}
+
+export async function isSectionGranted(userId: number, section: string): Promise<boolean> {
+  const { rows } = await sql`
+    SELECT 1 FROM section_access WHERE user_id = ${userId} AND section = ${section} LIMIT 1
+  `;
+  return rows.length > 0;
+}
+
+export async function grantSection(userId: number, section: string) {
+  await sql`
+    INSERT INTO section_access (user_id, section) VALUES (${userId}, ${section})
+    ON CONFLICT DO NOTHING
+  `;
+}
+
+export async function revokeSection(userId: number, section: string) {
+  await sql`DELETE FROM section_access WHERE user_id = ${userId} AND section = ${section}`;
+}
+
 // ---- Admin ----
 
 export async function listUsersForAdmin() {
@@ -175,7 +200,17 @@ export async function listUsersForAdmin() {
     SELECT
       u.id, u.name, u.email, u.created_at,
       EXISTS (SELECT 1 FROM quiz_responses q WHERE q.user_id = u.id) AS day1_completed,
-      EXISTS (SELECT 1 FROM feedback f WHERE f.user_id = u.id) AS feedback_completed
+      EXISTS (SELECT 1 FROM feedback f WHERE f.user_id = u.id) AS feedback_completed,
+      EXISTS (SELECT 1 FROM section_access sa WHERE sa.user_id = u.id AND sa.section = 'contactInfo') AS contact_info_granted,
+      EXISTS (SELECT 1 FROM contact_info c WHERE c.user_id = u.id) AS contact_info_done,
+      EXISTS (SELECT 1 FROM section_access sa WHERE sa.user_id = u.id AND sa.section = 'wideningAccess') AS widening_access_granted,
+      EXISTS (SELECT 1 FROM widening_access w WHERE w.user_id = u.id) AS widening_access_done,
+      EXISTS (SELECT 1 FROM section_access sa WHERE sa.user_id = u.id AND sa.section = 'localInduction') AS local_induction_granted,
+      EXISTS (SELECT 1 FROM local_induction l WHERE l.user_id = u.id) AS local_induction_done,
+      EXISTS (SELECT 1 FROM section_access sa WHERE sa.user_id = u.id AND sa.section = 'quiz') AS quiz_granted,
+      EXISTS (SELECT 1 FROM quiz_responses q WHERE q.user_id = u.id) AS quiz_done,
+      EXISTS (SELECT 1 FROM section_access sa WHERE sa.user_id = u.id AND sa.section = 'feedback') AS feedback_granted,
+      EXISTS (SELECT 1 FROM feedback f WHERE f.user_id = u.id) AS feedback_done
     FROM users u
     ORDER BY u.created_at DESC
   `;
@@ -203,6 +238,13 @@ export async function fetchTableForAdmin(key: AdminTableKey) {
     `SELECT t.*, u.email AS account_email FROM ${table} t LEFT JOIN users u ON u.id = t.user_id ORDER BY t.id DESC`,
   );
   return rows;
+}
+
+/** Table name is validated against the fixed ADMIN_TABLES map above, never interpolated from raw input. */
+export async function hasSubmittedSection(userId: number, key: AdminTableKey): Promise<boolean> {
+  const table = ADMIN_TABLES[key];
+  const { rows } = await sql.query(`SELECT 1 FROM ${table} WHERE user_id = $1 LIMIT 1`, [userId]);
+  return rows.length > 0;
 }
 
 export async function fetchAnalytics() {

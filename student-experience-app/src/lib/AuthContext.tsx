@@ -1,9 +1,19 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import type { SectionKey } from '../../shared/constants';
 
 export type AuthUser =
   | { role: 'admin'; username: string }
-  | { role: 'student'; id: number; name: string; email: string; day1Completed: boolean; feedbackCompleted: boolean };
+  | {
+      role: 'student';
+      id: number;
+      name: string;
+      email: string;
+      day1Completed: boolean;
+      feedbackCompleted: boolean;
+      grantedSections: SectionKey[];
+      completedSections: SectionKey[];
+    };
 
 interface AuthContextValue {
   user: AuthUser | null;

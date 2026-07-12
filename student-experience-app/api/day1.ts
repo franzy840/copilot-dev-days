@@ -3,8 +3,17 @@ import {
   CONTACT_INFO_FIELDS,
   LOCAL_INDUCTION_FIELDS,
   QUIZ_QUESTIONS,
+  SECTION_LABELS,
+  isSectionKey,
 } from '../shared/constants.js';
-import { insertContactInfo, insertLocalInduction, insertQuiz, insertWideningAccess } from './_lib/db.js';
+import {
+  insertContactInfo,
+  insertLocalInduction,
+  insertQuiz,
+  insertWideningAccess,
+  isSectionGranted,
+  hasSubmittedSection,
+} from './_lib/db.js';
 import { missingRequiredFields, isValidEmail } from './_lib/validate.js';
 import { sendAdminNotification } from './_lib/mailer.js';
 import { requireAuth } from './_lib/auth.js';
@@ -23,53 +32,70 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const body = req.body ?? {};
-  const studentName = session.name;
-  const contactInfo = body.contactInfo ?? {};
-  const wideningAccess = body.wideningAccess ?? {};
-  const localInduction = body.localInduction ?? {};
-  const quizAnswers = body.quizAnswers ?? {};
-
-  const errors: string[] = [];
-
-  errors.push(...missingRequiredFields(CONTACT_INFO_FIELDS, contactInfo));
-  errors.push(...missingRequiredFields(LOCAL_INDUCTION_FIELDS, localInduction));
-
-  if (contactInfo.email && !isValidEmail(contactInfo.email)) {
-    errors.push('Email Address is not a valid email.');
-  }
-
-  const missingQuizAnswers = QUIZ_QUESTIONS.filter((q) => {
-    const answer = quizAnswers[q.id];
-    return typeof answer !== 'number' || answer < 0 || answer >= q.options.length;
-  });
-  if (missingQuizAnswers.length > 0) {
-    errors.push('Please answer every quiz question.');
-  }
-
-  if (errors.length > 0) {
-    res.status(400).json({ error: errors.join(' ') });
+  const section = body.section;
+  if (typeof section !== 'string' || !isSectionKey(section) || section === 'feedback') {
+    res.status(400).json({ error: 'Unknown or invalid Day 1 section.' });
     return;
   }
 
-  let score = 0;
-  for (const q of QUIZ_QUESTIONS) {
-    if (quizAnswers[q.id] === q.correctIndex) score += 1;
+  const userId = session.userId;
+  const studentName = session.name;
+
+  const granted = await isSectionGranted(userId, section);
+  if (!granted) {
+    res.status(403).json({ error: `${SECTION_LABELS[section]} has not been unlocked for you yet. Ask your admin for access.` });
+    return;
   }
 
-  const userId = session.userId;
+  const alreadySubmitted = await hasSubmittedSection(userId, section);
+  if (alreadySubmitted) {
+    res.status(409).json({ error: `You have already submitted ${SECTION_LABELS[section]}.` });
+    return;
+  }
 
-  await Promise.all([
-    insertContactInfo({ userId, studentName, ...contactInfo }),
-    insertWideningAccess({ userId, studentName, ...wideningAccess }),
-    insertLocalInduction({ userId, studentName, ...localInduction }),
-    insertQuiz({ userId, studentName, answers: quizAnswers, score, total: QUIZ_QUESTIONS.length }),
-  ]);
+  if (section === 'contactInfo') {
+    const contactInfo = body.contactInfo ?? {};
+    const errors = missingRequiredFields(CONTACT_INFO_FIELDS, contactInfo);
+    if (contactInfo.email && !isValidEmail(contactInfo.email)) {
+      errors.push('Email Address is not a valid email.');
+    }
+    if (errors.length > 0) {
+      res.status(400).json({ error: errors.join(' ') });
+      return;
+    }
+    await insertContactInfo({ userId, studentName, ...contactInfo });
+  } else if (section === 'wideningAccess') {
+    const wideningAccess = body.wideningAccess ?? {};
+    await insertWideningAccess({ userId, studentName, ...wideningAccess });
+  } else if (section === 'localInduction') {
+    const localInduction = body.localInduction ?? {};
+    const errors = missingRequiredFields(LOCAL_INDUCTION_FIELDS, localInduction);
+    if (errors.length > 0) {
+      res.status(400).json({ error: errors.join(' ') });
+      return;
+    }
+    await insertLocalInduction({ userId, studentName, ...localInduction });
+  } else if (section === 'quiz') {
+    const quizAnswers = body.quizAnswers ?? {};
+    const missingQuizAnswers = QUIZ_QUESTIONS.filter((q) => {
+      const answer = quizAnswers[q.id];
+      return typeof answer !== 'number' || answer < 0 || answer >= q.options.length;
+    });
+    if (missingQuizAnswers.length > 0) {
+      res.status(400).json({ error: 'Please answer every quiz question.' });
+      return;
+    }
+    let score = 0;
+    for (const q of QUIZ_QUESTIONS) {
+      if (quizAnswers[q.id] === q.correctIndex) score += 1;
+    }
+    await insertQuiz({ userId, studentName, answers: quizAnswers, score, total: QUIZ_QUESTIONS.length });
+  }
 
   try {
     await sendAdminNotification(
-      `New Day 1 submission — ${studentName}`,
-      `${studentName} (${session.email}) submitted their Day 1 forms (Contact Info, Widening Access, ` +
-        `Local Induction, Quiz). Quiz score: ${score}/${QUIZ_QUESTIONS.length}.\n\n` +
+      `New Day 1 submission — ${studentName} (${SECTION_LABELS[section]})`,
+      `${studentName} (${session.email}) submitted the "${SECTION_LABELS[section]}" section of their Day 1 forms.\n\n` +
         `The full workbook is attached as an Excel file.`,
     );
   } catch (err) {

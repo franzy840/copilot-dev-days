@@ -1,6 +1,10 @@
 import { Routes, Route, Link } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import Day1Page from './pages/Day1Page';
+import ContactInfoPage from './pages/day1/ContactInfoPage';
+import WideningAccessPage from './pages/day1/WideningAccessPage';
+import LocalInductionPage from './pages/day1/LocalInductionPage';
+import QuizPage from './pages/day1/QuizPage';
 import FeedbackPage from './pages/FeedbackPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
@@ -56,6 +60,38 @@ export default function App() {
           element={
             <ProtectedRoute role="student">
               <Day1Page />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/day1/contact-info"
+          element={
+            <ProtectedRoute role="student">
+              <ContactInfoPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/day1/widening-access"
+          element={
+            <ProtectedRoute role="student">
+              <WideningAccessPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/day1/local-induction"
+          element={
+            <ProtectedRoute role="student">
+              <LocalInductionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/day1/quiz"
+          element={
+            <ProtectedRoute role="student">
+              <QuizPage />
             </ProtectedRoute>
           }
         />

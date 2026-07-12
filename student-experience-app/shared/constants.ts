@@ -11,6 +11,27 @@ export const ADMIN_EMAIL = 'franzy840@gmail.com';
 // ADMIN_EMAIL above so the login name doesn't have to be an email.
 export const ADMIN_USERNAME = 'hansel';
 
+// ---- Section access control ----
+//
+// Each key names one of the 5 independently-lockable sections a student
+// fills in. A section is only visible/submittable once the admin grants
+// it for that specific student (see section_access table).
+export const SECTION_KEYS = ['contactInfo', 'wideningAccess', 'localInduction', 'quiz', 'feedback'] as const;
+
+export type SectionKey = (typeof SECTION_KEYS)[number];
+
+export function isSectionKey(value: string): value is SectionKey {
+  return (SECTION_KEYS as readonly string[]).includes(value);
+}
+
+export const SECTION_LABELS: Record<SectionKey, string> = {
+  contactInfo: 'Contact Information',
+  wideningAccess: 'Widening Access Participation Survey',
+  localInduction: 'Local Induction',
+  quiz: 'Induction Quiz',
+  feedback: 'Final Day Feedback',
+};
+
 export type FieldType = 'text' | 'email' | 'tel' | 'date' | 'number' | 'textarea' | 'select';
 
 export interface FieldDef {
