@@ -27,9 +27,14 @@ export default function DataTable({ rows }: { rows: Row[] }) {
         <tbody>
           {rows.map((row, i) => (
             <tr key={i}>
-              {columns.map((col) => (
-                <td key={col}>{formatCell(row[col])}</td>
-              ))}
+              {columns.map((col) => {
+                const text = formatCell(row[col]);
+                return (
+                  <td key={col} className={text.includes('\n') ? 'data-table-cell-wrap' : undefined}>
+                    {text}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>

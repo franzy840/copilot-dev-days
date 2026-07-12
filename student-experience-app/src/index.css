@@ -809,6 +809,14 @@ input:focus-visible,
   text-align: left;
   border-bottom: 1px solid var(--line-soft);
   white-space: nowrap;
+  vertical-align: top;
+}
+
+.data-table td.data-table-cell-wrap {
+  white-space: pre-line;
+  min-width: 320px;
+  max-width: 480px;
+  line-height: 1.5;
 }
 
 .data-table th {
@@ -973,4 +981,73 @@ input:focus-visible,
   font-weight: 700;
   letter-spacing: 0.03em;
   margin: 4px 0 8px;
+}
+
+.admin-toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.secondary-link-button {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  color: var(--primary-dark);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  padding: 8px 16px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.86rem;
+  text-decoration: none;
+}
+
+.secondary-link-button:hover {
+  border-color: var(--primary);
+  background: var(--primary-tint);
+}
+
+/* ---- Print / Save as PDF ---- */
+
+@media print {
+  header.app-header,
+  .admin-toolbar,
+  .tab-picker,
+  .actions,
+  .stepper,
+  button {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+  }
+
+  .page,
+  .page-wide {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .card {
+    box-shadow: none;
+    border: none;
+    padding: 0;
+  }
+
+  .data-table-scroll {
+    overflow: visible;
+    border: none;
+  }
+
+  .data-table th {
+    position: static;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }
