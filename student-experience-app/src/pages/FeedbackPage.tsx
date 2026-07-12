@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { FEEDBACK_STATEMENTS, FEEDBACK_OPEN_FIELDS } from '../../shared/constants';
+import { FEEDBACK_STATEMENTS, FEEDBACK_OPEN_FIELDS, HOSPITAL_SUGGESTIONS } from '../../shared/constants';
 import LikertQuestion from '../components/LikertQuestion';
 import FieldSection from '../components/FieldSection';
+import Combobox from '../components/Combobox';
 
 interface Rating {
   score?: number;
@@ -65,6 +66,7 @@ export default function FeedbackPage() {
   if (done) {
     return (
       <div className="page thank-you">
+        <div className="thank-you-badge">✓</div>
         <h2>Thank you for your feedback!</h2>
         <p>It really helps us improve future placements.</p>
       </div>
@@ -96,7 +98,7 @@ export default function FeedbackPage() {
         </div>
         <div className="field">
           <label htmlFor="hospital">Hospital</label>
-          <input id="hospital" type="text" value={hospital} onChange={(e) => setHospital(e.target.value)} />
+          <Combobox id="hospital" value={hospital} suggestions={HOSPITAL_SUGGESTIONS} placeholder="Choose or type…" onChange={setHospital} />
         </div>
         <div className="field">
           <label htmlFor="team">Team</label>

@@ -1,4 +1,6 @@
 import type { FieldDef } from '../../shared/constants';
+import Select from './Select';
+import Combobox from './Combobox';
 
 interface Props {
   field: FieldDef;
@@ -12,8 +14,7 @@ export default function FormField({ field, value, onChange }: Props) {
     name: field.name,
     required: field.required,
     value,
-    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-      onChange(field.name, e.target.value),
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange(field.name, e.target.value),
   };
 
   return (
@@ -26,14 +27,15 @@ export default function FormField({ field, value, onChange }: Props) {
       {field.type === 'textarea' ? (
         <textarea {...commonProps} />
       ) : field.type === 'select' ? (
-        <select {...commonProps}>
-          <option value="">Select…</option>
-          {field.options?.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
+        <Select id={field.name} value={value} options={field.options ?? []} onChange={(v) => onChange(field.name, v)} />
+      ) : field.type === 'text' && field.suggestions ? (
+        <Combobox
+          id={field.name}
+          value={value}
+          suggestions={field.suggestions}
+          placeholder="Choose or type your own…"
+          onChange={(v) => onChange(field.name, v)}
+        />
       ) : (
         <input type={field.type} {...commonProps} />
       )}

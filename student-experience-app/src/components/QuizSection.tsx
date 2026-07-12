@@ -15,7 +15,7 @@ export default function QuizSection({ answers, onAnswer }: Props) {
           </label>
           <div className="radio-group">
             {q.options.map((opt, idx) => (
-              <label key={idx}>
+              <label key={idx} className="option-card">
                 <input
                   type="radio"
                   name={q.id}
@@ -23,7 +23,7 @@ export default function QuizSection({ answers, onAnswer }: Props) {
                   onChange={() => onAnswer(q.id, idx)}
                   required
                 />
-                {opt}
+                <span>{opt}</span>
               </label>
             ))}
           </div>

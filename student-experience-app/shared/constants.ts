@@ -14,7 +14,30 @@ export interface FieldDef {
   required?: boolean;
   options?: string[];
   helpText?: string;
+  /** For 'text' fields: shown as a "choose or type" suggestion list instead of a plain input. */
+  suggestions?: string[];
 }
+
+export const HOSPITAL_SUGGESTIONS = ['Epsom Hospital', 'St Helier Hospital'];
+
+export const DEPARTMENT_SUGGESTIONS = [
+  'Accident & Emergency',
+  'Acute Medical Unit',
+  'Cardiology',
+  'General Surgery',
+  'Maternity',
+  'Neonatal Unit',
+  'Oncology',
+  'Orthopaedics',
+  'Outpatients',
+  'Paediatrics',
+  'Pathology',
+  'Pharmacy',
+  'Physiotherapy',
+  'Radiology',
+  'Respiratory Medicine',
+  'Theatres',
+];
 
 // ---- Contact Information (Day 1) ----
 
@@ -140,7 +163,7 @@ export const WIDENING_ACCESS_FIELDS: FieldDef[] = [
 
 export const LOCAL_INDUCTION_FIELDS: FieldDef[] = [
   { name: 'supervisorName', label: 'Local Supervisor Name', type: 'text', required: true },
-  { name: 'department', label: 'Department / Ward', type: 'text', required: true },
+  { name: 'department', label: 'Department / Ward', type: 'text', required: true, suggestions: DEPARTMENT_SUGGESTIONS },
   {
     name: 'risksNotes',
     label: 'Department-specific risks explained to you (notes)',

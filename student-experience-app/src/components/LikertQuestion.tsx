@@ -19,9 +19,10 @@ export default function LikertQuestion({ index, text, score, comment, onScore, o
         {LABELS.map((label, i) => {
           const value = i + 1;
           return (
-            <label key={value}>
+            <label key={value} className="option-card scale-card">
               <input type="radio" name={`likert-${index}`} checked={score === value} onChange={() => onScore(value)} required />
-              {value} — {label}
+              <span className="scale-num">{value}</span>
+              <span>{label}</span>
             </label>
           );
         })}

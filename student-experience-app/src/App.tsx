@@ -7,7 +7,8 @@ export default function App() {
   return (
     <>
       <header className="app-header">
-        <h1>Work Experience — Epsom and St Helier University Hospitals NHS Trust</h1>
+        <p className="app-eyebrow">Epsom and St Helier University Hospitals NHS Trust</p>
+        <h1>Work Experience</h1>
       </header>
       <Routes>
         <Route path="/" element={<HomePage />} />

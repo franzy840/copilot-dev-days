@@ -70,6 +70,7 @@ export default function Day1Page() {
   if (done) {
     return (
       <div className="page thank-you">
+        <div className="thank-you-badge">✓</div>
         <h2>Thank you, {studentName}!</h2>
         <p>Your Day 1 forms have been submitted. Enjoy your placement.</p>
       </div>
@@ -78,14 +79,18 @@ export default function Day1Page() {
 
   return (
     <div className="page">
-      <div className="step-indicator">
+      <ol className="stepper">
         {STEPS.map((s, i) => (
-          <span key={s} className={i <= step ? 'active' : ''} />
+          <li key={s} className={i < step ? 'done' : i === step ? 'current' : ''}>
+            <span className="stepper-dot">{i < step ? '✓' : i + 1}</span>
+            <span className="stepper-label">{s}</span>
+          </li>
         ))}
-      </div>
+      </ol>
 
       {error && <div className="error-banner">{error}</div>}
 
+      <div className="step-panel" key={step}>
       {step === 0 && (
         <div className="card">
           <h2>Welcome</h2>
@@ -164,6 +169,7 @@ export default function Day1Page() {
           <QuizSection answers={quizAnswers} onAnswer={(id, idx) => setQuizAnswers((s) => ({ ...s, [id]: idx }))} />
         </div>
       )}
+      </div>
 
       <div className="actions">
         {step > 0 ? (
