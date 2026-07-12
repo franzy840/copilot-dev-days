@@ -5,7 +5,7 @@
 
 export const ADMIN_EMAIL = 'franzy840@gmail.com';
 
-export type FieldType = 'text' | 'email' | 'tel' | 'date' | 'textarea' | 'select';
+export type FieldType = 'text' | 'email' | 'tel' | 'date' | 'number' | 'textarea' | 'select';
 
 export interface FieldDef {
   name: string;
@@ -16,6 +16,9 @@ export interface FieldDef {
   helpText?: string;
   /** For 'text' fields: shown as a "choose or type" suggestion list instead of a plain input. */
   suggestions?: string[];
+  /** For 'number' fields. */
+  min?: number;
+  max?: number;
 }
 
 export const HOSPITAL_SUGGESTIONS = ['Epsom Hospital', 'St Helier Hospital'];
@@ -64,8 +67,10 @@ export const WIDENING_ACCESS_FIELDS: FieldDef[] = [
   {
     name: 'age',
     label: 'Age',
-    type: 'select',
-    options: ['Under 16', '16-18', '19-24', '25-29', '30-39', '40-49', '50-59', '60-69', '70+', PREFER_NOT_TO_SAY],
+    type: 'number',
+    min: 10,
+    max: 100,
+    helpText: 'Leave blank if you’d prefer not to say.',
   },
   {
     name: 'gender',

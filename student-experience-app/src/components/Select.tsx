@@ -33,7 +33,7 @@ export default function Select({ id, value, options, placeholder = 'Choose…', 
     if (open) {
       setFilter('');
       setHighlight(Math.max(0, options.indexOf(value)));
-      (showFilter ? filterRef.current : rootRef.current?.querySelector('button'))?.focus();
+      (showFilter ? filterRef.current : rootRef.current?.querySelector('button'))?.focus({ preventScroll: true });
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 

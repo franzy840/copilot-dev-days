@@ -170,6 +170,7 @@ header.app-header h1 {
 .field input[type="email"],
 .field input[type="tel"],
 .field input[type="date"],
+.field input[type="number"],
 .field textarea {
   width: 100%;
   padding: 11px 13px;

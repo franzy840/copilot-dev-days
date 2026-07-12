@@ -37,7 +37,7 @@ export default function FormField({ field, value, onChange }: Props) {
           onChange={(v) => onChange(field.name, v)}
         />
       ) : (
-        <input type={field.type} {...commonProps} />
+        <input type={field.type} min={field.min} max={field.max} {...commonProps} />
       )}
     </div>
   );
