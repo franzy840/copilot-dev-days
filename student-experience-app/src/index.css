@@ -115,6 +115,57 @@ header.app-header h1 {
   letter-spacing: -0.01em;
 }
 
+.app-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.user-menu-link {
+  color: white;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.86rem;
+  text-decoration: none;
+  border: 1px solid rgb(255 255 255 / 0.5);
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+}
+
+.user-menu-link:hover {
+  background: rgb(255 255 255 / 0.12);
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-menu-name {
+  color: white;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.86rem;
+}
+
+.user-menu-logout {
+  background: transparent;
+  color: white;
+  border: 1px solid rgb(255 255 255 / 0.5);
+  box-shadow: none;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+}
+
+.user-menu-logout:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.12);
+  transform: none;
+  box-shadow: none;
+}
+
 /* ---- Cards ---- */
 
 .card {
@@ -654,6 +705,16 @@ input:focus-visible,
   color: var(--primary);
 }
 
+.home-card-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.home-card-disabled:hover {
+  transform: none;
+  border-color: var(--line);
+}
+
 /* ---- Thank you ---- */
 
 .thank-you {
@@ -694,4 +755,183 @@ input:focus-visible,
 
 .thank-you p {
   color: var(--ink-soft);
+}
+
+/* ---- Admin ---- */
+
+.page-wide {
+  max-width: 920px;
+}
+
+.tab-picker {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.tab-picker button {
+  background: var(--surface);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+  box-shadow: none;
+  font-size: 0.86rem;
+  padding: 8px 16px;
+}
+
+.tab-picker button:hover:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--primary);
+}
+
+.tab-picker button.tab-picker-active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.data-table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 9px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line-soft);
+  white-space: nowrap;
+}
+
+.data-table th {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: var(--surface-2);
+  position: sticky;
+  top: 0;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 0.76rem;
+  font-weight: 700;
+  font-family: var(--font-display);
+}
+
+.badge-done {
+  background: var(--primary-tint);
+  color: var(--primary-dark);
+}
+
+.badge-pending {
+  background: var(--surface-2);
+  color: var(--ink-faint);
+  border: 1px solid var(--line);
+}
+
+.chart-empty {
+  color: var(--ink-faint);
+  font-size: 0.88rem;
+}
+
+.analytics {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.stat-tile-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.stat-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.stat-tile-value {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.8rem;
+  color: var(--primary-dark);
+}
+
+.stat-tile-label {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.chart h3 {
+  margin: 0 0 14px;
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.chart-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chart-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 28%) 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.chart-row-label {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chart-row-track {
+  height: 16px;
+  background: var(--surface-2);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.chart-row-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: var(--radius-pill);
+  transition: width 0.3s ease;
+}
+
+.chart-row-value {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink);
+  min-width: 2.5ch;
+  text-align: right;
 }

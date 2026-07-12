@@ -7,6 +7,7 @@ import {
 import { insertContactInfo, insertLocalInduction, insertQuiz, insertWideningAccess } from './_lib/db.js';
 import { missingRequiredFields, isValidEmail } from './_lib/validate.js';
 import { sendAdminNotification } from './_lib/mailer.js';
+import { requireAuth } from './_lib/auth.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -14,15 +15,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
+  const session = requireAuth(req, res);
+  if (!session) return;
+  if (session.role !== 'student') {
+    res.status(403).json({ error: 'Log in as a student to submit Day 1 forms.' });
+    return;
+  }
+
   const body = req.body ?? {};
-  const studentName = typeof body.studentName === 'string' ? body.studentName.trim() : '';
+  const studentName = session.name;
   const contactInfo = body.contactInfo ?? {};
   const wideningAccess = body.wideningAccess ?? {};
   const localInduction = body.localInduction ?? {};
   const quizAnswers = body.quizAnswers ?? {};
 
   const errors: string[] = [];
-  if (!studentName) errors.push('Full Name is required.');
 
   errors.push(...missingRequiredFields(CONTACT_INFO_FIELDS, contactInfo));
   errors.push(...missingRequiredFields(LOCAL_INDUCTION_FIELDS, localInduction));
@@ -49,17 +56,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (quizAnswers[q.id] === q.correctIndex) score += 1;
   }
 
+  const userId = session.userId;
+
   await Promise.all([
-    insertContactInfo({ studentName, ...contactInfo }),
-    insertWideningAccess({ studentName, ...wideningAccess }),
-    insertLocalInduction({ studentName, ...localInduction }),
-    insertQuiz({ studentName, answers: quizAnswers, score, total: QUIZ_QUESTIONS.length }),
+    insertContactInfo({ userId, studentName, ...contactInfo }),
+    insertWideningAccess({ userId, studentName, ...wideningAccess }),
+    insertLocalInduction({ userId, studentName, ...localInduction }),
+    insertQuiz({ userId, studentName, answers: quizAnswers, score, total: QUIZ_QUESTIONS.length }),
   ]);
 
   try {
     await sendAdminNotification(
       `New Day 1 submission — ${studentName}`,
-      `${studentName} submitted their Day 1 forms (Contact Info, Widening Access, ` +
+      `${studentName} (${session.email}) submitted their Day 1 forms (Contact Info, Widening Access, ` +
         `Local Induction, Quiz). Quiz score: ${score}/${QUIZ_QUESTIONS.length}.\n\n` +
         `The full workbook is attached as an Excel file.`,
     );

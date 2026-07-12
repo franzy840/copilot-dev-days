@@ -1,14 +1,40 @@
--- Run this once against the Vercel Postgres database attached to this
--- project (Vercel dashboard -> Storage -> your DB -> Query, or via psql
--- using the connection string from `vercel env pull`).
+-- Run this once against the Postgres database attached to this project
+-- (Neon/Vercel Storage -> Query tab, or via psql).
 --
+-- Neon's SQL editor can't run multiple statements pasted together
+-- ("cannot insert multiple commands into a prepared statement") - run
+-- each block below separately, in order.
+--
+-- Already ran an earlier version of this file against a live database?
+-- Use db/migration_002_auth.sql instead - it only adds what's new
+-- (users, login_tokens, user_id columns) without touching existing data.
+
+-- 1
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 2
+CREATE TABLE IF NOT EXISTS login_tokens (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  token TEXT UNIQUE NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 3
 -- Five separate tables so Day 1's four topics are stored separately even
 -- though students fill them in as one combined form, plus one table for
 -- the Final Day feedback form.
-
 CREATE TABLE IF NOT EXISTS contact_info (
   id SERIAL PRIMARY KEY,
   submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  user_id INTEGER REFERENCES users(id),
   student_name TEXT NOT NULL,
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
@@ -24,9 +50,11 @@ CREATE TABLE IF NOT EXISTS contact_info (
   nok_home_phone TEXT
 );
 
+-- 4
 CREATE TABLE IF NOT EXISTS widening_access (
   id SERIAL PRIMARY KEY,
   submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  user_id INTEGER REFERENCES users(id),
   student_name TEXT NOT NULL,
   age TEXT,
   gender TEXT,
@@ -40,9 +68,11 @@ CREATE TABLE IF NOT EXISTS widening_access (
   parents_attended_university TEXT
 );
 
+-- 5
 CREATE TABLE IF NOT EXISTS local_induction (
   id SERIAL PRIMARY KEY,
   submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  user_id INTEGER REFERENCES users(id),
   student_name TEXT NOT NULL,
   supervisor_name TEXT NOT NULL,
   department TEXT NOT NULL,
@@ -51,18 +81,22 @@ CREATE TABLE IF NOT EXISTS local_induction (
   induction_date DATE NOT NULL
 );
 
+-- 6
 CREATE TABLE IF NOT EXISTS quiz_responses (
   id SERIAL PRIMARY KEY,
   submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  user_id INTEGER REFERENCES users(id),
   student_name TEXT NOT NULL,
   answers JSONB NOT NULL,
   score INTEGER NOT NULL,
   total INTEGER NOT NULL
 );
 
+-- 7
 CREATE TABLE IF NOT EXISTS feedback (
   id SERIAL PRIMARY KEY,
   submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  user_id INTEGER REFERENCES users(id),
   student_name TEXT,
   date_from DATE,
   date_to DATE,
@@ -77,3 +111,9 @@ CREATE TABLE IF NOT EXISTS feedback (
   memorable_mention TEXT,
   other_comments TEXT
 );
+
+-- 8
+CREATE INDEX IF NOT EXISTS idx_quiz_responses_user_id ON quiz_responses(user_id);
+
+-- 9
+CREATE INDEX IF NOT EXISTS idx_feedback_user_id ON feedback(user_id);

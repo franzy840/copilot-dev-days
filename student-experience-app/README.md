@@ -1,14 +1,19 @@
 # Student Work Experience Forms App
 
-A public web app for collecting Work Experience student paperwork:
+A web app for collecting Work Experience student paperwork, with student
+accounts and an admin dashboard:
 
-- **`/day1`** — one combined public link covering Contact Info, the
-  Widening Access Participation Survey, Local Induction sign-off, and
-  the safety Induction Quiz (auto-graded). Submitted together as one
-  flow, but stored in **separate database tables / Excel tabs** per
-  topic.
-- **`/feedback`** — a separate public link for the Final Day Work
-  Experience Feedback form.
+- **`/login`** — student sign-in. Enter name + email, get a one-time
+  login link by email (no password). New email = new account, created
+  automatically.
+- **`/day1`** — logged-in students only. Contact Info, the Widening
+  Access Participation Survey, Local Induction sign-off, and the safety
+  Induction Quiz (auto-graded). Submitted together as one flow, but
+  stored in **separate database tables / Excel tabs** per topic.
+- **`/feedback`** — logged-in students only, and **locked until Day 1
+  is completed** (enforced both in the UI and server-side in
+  `api/feedback.ts`).
+- **`/admin/login`** + **`/admin`** — admin-only dashboard (see below).
 
 Every submission is written to a Postgres database and triggers an
 email to the admin **only** (`franzy840@gmail.com`, see
@@ -16,6 +21,20 @@ email to the admin **only** (`franzy840@gmail.com`, see
 `.xlsx` workbook (one sheet per topic). If a student flags a
 safeguarding concern on the feedback form, an additional urgent email
 fires immediately.
+
+## Admin dashboard (`/admin`)
+
+Sign in at `/admin/login` with `franzy840@gmail.com` and the
+`ADMIN_PASSWORD` you set (see setup below — this is a separate
+env-var-based login, not a database account). Three tabs:
+
+- **Analytics** — registered/completed counts, quiz score distribution,
+  average feedback rating per statement, and Widening Access breakdowns
+  (age, gender, ethnicity, disabilities), all as simple bar charts.
+- **Users** — every student account, with Day 1 / Feedback completion
+  status.
+- **Responses** — the raw rows for each of the 5 tables, joined with the
+  submitting student's account email.
 
 This is unrelated to the rest of the `copilot-dev-days` repo (a Copilot
 Dev Days workshop app) — it's a self-contained subfolder with its own
@@ -29,6 +48,9 @@ Dev Days workshop app) — it's a self-contained subfolder with its own
 - Excel export: `exceljs`, generated on demand from the database.
 - Email: `nodemailer` over Gmail SMTP, using an **App Password** —
   not your normal Gmail password.
+- Auth: passwordless magic-link login for students (`jsonwebtoken` +
+  `cookie`, one-time tokens in a `login_tokens` table); env-var password
+  login for the single admin account (no database row for admin).
 
 ## One-time deployment setup
 
@@ -49,10 +71,16 @@ Dev Days workshop app) — it's a self-contained subfolder with its own
    **Postgres**. Accept the defaults and connect it to this project.
    Vercel automatically adds a `POSTGRES_URL` environment variable —
    you don't need to copy/paste anything.
-2. Open the database's **Query** tab (or connect via `psql` using the
-   connection string from **Storage → .env.local tab**) and run the
-   contents of [`db/schema.sql`](./db/schema.sql) once, to create the
-   five tables.
+2. Open the database's **Query** tab (Neon calls this "SQL Editor" —
+   whichever provider you attached, it can't run multiple statements
+   pasted together at once, so run each numbered block separately):
+   - **New database**: run every block in [`db/schema.sql`](./db/schema.sql)
+     in order — creates all 7 tables (including `users`/`login_tokens`).
+   - **Already ran an older version of this file against a live
+     database?** Run [`db/migration_002_auth.sql`](./db/migration_002_auth.sql)
+     instead — it only adds what's new (`users`, `login_tokens`, and a
+     `user_id` column on each existing table) without touching your
+     existing rows.
 
 ### 3. Add the Gmail App Password
 
@@ -65,14 +93,29 @@ Dev Days workshop app) — it's a self-contained subfolder with its own
    - `GMAIL_APP_PASSWORD` = the 16-character app password
    (Add to all environments: Production, Preview, Development.)
 
-### 4. Deploy
+### 4. Add the login secrets
+
+In the same **Settings → Environment Variables** screen, add two more
+(all environments):
+
+- `JWT_SECRET` = any long random string — this signs login session
+  cookies for both students and admin. Generate one with
+  `openssl rand -hex 32` (or any password generator), and keep it
+  secret; anyone with it could forge a login session.
+- `ADMIN_PASSWORD` = a password of your choosing for the admin
+  dashboard. You'll log in at `/admin/login` with
+  `franzy840@gmail.com` + this password.
+
+### 5. Deploy
 
 Trigger a deploy (Vercel does this automatically on every push to the
 branch/PR, or click **Deploy** in the dashboard). Once live, Vercel
 gives you a public URL like `https://student-experience-app.vercel.app`.
 
-- Day 1 link to give students: `https://<your-project>.vercel.app/day1`
-- Final Day link: `https://<your-project>.vercel.app/feedback`
+- Link to give students: `https://<your-project>.vercel.app/login` — they
+  sign up on first visit, then `/day1` and `/feedback` (once unlocked)
+  are reachable from the home page while logged in.
+- Your admin login: `https://<your-project>.vercel.app/admin/login`
 
 You can also add a custom domain under **Settings → Domains** if you'd
 rather hand out a nicer link.
@@ -89,17 +132,23 @@ To run the full stack locally (frontend + API + database), install the
 connect this folder to the Vercel project, then:
 
 ```bash
-vercel env pull .env.local   # pulls POSTGRES_URL, GMAIL_* from Vercel
+vercel env pull .env.local   # pulls POSTGRES_URL, GMAIL_*, JWT_SECRET, ADMIN_PASSWORD from Vercel
 vercel dev
 ```
 
 ## Data access & privacy
 
-- Only you (the Vercel project owner) can query the database or read
-  the deployed function logs — students only ever see the public forms.
-- Only `franzy840@gmail.com` ever receives an email from this app —
-  see `ADMIN_EMAIL` in `shared/constants.ts` if that ever needs to
-  change.
+- Only you (the Vercel project owner) can query the database, read the
+  deployed function logs, or sign in to `/admin` — students only ever
+  see the public login + forms.
+- The admin dashboard (`/admin`) is a second, separate login (email +
+  `ADMIN_PASSWORD`) — it's not a student account with elevated
+  permissions, so there's no risk of a student account accidentally
+  gaining admin access.
+- Only `franzy840@gmail.com` ever receives a notification email from
+  this app — see `ADMIN_EMAIL` in `shared/constants.ts` if that ever
+  needs to change. Students only ever receive their own login-link
+  email, sent to the address they typed in.
 - Widening Access answers have no identifiers beyond `student_name` and
   are optional per-question ("Prefer not to say" is always offered) —
   per the source NHS document, consider periodically clearing that

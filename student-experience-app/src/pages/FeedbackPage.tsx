@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { FEEDBACK_STATEMENTS, FEEDBACK_OPEN_FIELDS, HOSPITAL_SUGGESTIONS } from '../../shared/constants';
 import LikertQuestion from '../components/LikertQuestion';
 import FieldSection from '../components/FieldSection';
 import Combobox from '../components/Combobox';
+import { useAuth } from '../lib/AuthContext';
 
 interface Rating {
   score?: number;
@@ -10,7 +12,7 @@ interface Rating {
 }
 
 export default function FeedbackPage() {
-  const [studentName, setStudentName] = useState('');
+  const { user } = useAuth();
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [hospital, setHospital] = useState('');
@@ -20,6 +22,25 @@ export default function FeedbackPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+
+  if (!user || user.role !== 'student') return null; // ProtectedRoute guarantees this in practice
+
+  if (!user.day1Completed) {
+    return (
+      <div className="page">
+        <div className="card">
+          <h2>Complete Day 1 first</h2>
+          <p className="help">
+            You'll need to finish your Day 1 forms (contact info, widening access, local induction and
+            the induction quiz) before you can submit Final Day feedback.
+          </p>
+          <Link to="/day1">
+            <button type="button">Go to Day 1 forms</button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   function setScore(id: string, score: number) {
     setRatings((s) => ({ ...s, [id]: { ...s[id], score } }));
@@ -41,8 +62,8 @@ export default function FeedbackPage() {
       const res = await fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({
-          studentName: studentName || undefined,
           dateFrom: dateFrom || undefined,
           dateTo: dateTo || undefined,
           hospital: hospital || undefined,
@@ -78,16 +99,13 @@ export default function FeedbackPage() {
       <div className="card">
         <h2>Work Experience Feedback</h2>
         <p className="help">
-          We like to be able to provide valuable experience for all students who join our hospitals and
-          your feedback is extremely helpful. Please answer honestly — this will enable us to make any
-          necessary amendments to benefit future students.
+          Submitting as <strong>{user.name}</strong> ({user.email}). We like to be able to provide
+          valuable experience for all students who join our hospitals and your feedback is extremely
+          helpful. Please answer honestly — this will enable us to make any necessary amendments to
+          benefit future students.
         </p>
         {error && <div className="error-banner">{error}</div>}
 
-        <div className="field">
-          <label htmlFor="studentName">Full Name (optional — leave blank for anonymous feedback)</label>
-          <input id="studentName" type="text" value={studentName} onChange={(e) => setStudentName(e.target.value)} />
-        </div>
         <div className="field">
           <label htmlFor="dateFrom">Dates you attended — from</label>
           <input id="dateFrom" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />

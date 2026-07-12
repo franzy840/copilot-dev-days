@@ -7,12 +7,13 @@ import {
 } from '../../shared/constants';
 import FieldSection from '../components/FieldSection';
 import QuizSection from '../components/QuizSection';
+import { useAuth } from '../lib/AuthContext';
 
 const STEPS = ['Welcome', 'Contact Info', 'Widening Access', 'Local Induction', 'Quiz'] as const;
 
 export default function Day1Page() {
+  const { user, refresh } = useAuth();
   const [step, setStep] = useState(0);
-  const [studentName, setStudentName] = useState('');
   const [todayDate, setTodayDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [contactInfo, setContactInfo] = useState<Record<string, string>>({});
   const [wideningAccess, setWideningAccess] = useState<Record<string, string>>({});
@@ -22,11 +23,9 @@ export default function Day1Page() {
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
 
+  if (!user || user.role !== 'student') return null; // ProtectedRoute guarantees this in practice
+
   function next() {
-    if (step === 0 && !studentName.trim()) {
-      setError('Please enter your full name.');
-      return;
-    }
     setError('');
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
@@ -47,8 +46,8 @@ export default function Day1Page() {
       const res = await fetch('/api/day1', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({
-          studentName,
           contactInfo,
           wideningAccess,
           localInduction: { ...localInduction, inductionDate: localInduction.inductionDate || todayDate },
@@ -59,6 +58,7 @@ export default function Day1Page() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || 'Something went wrong submitting the form.');
       }
+      await refresh();
       setDone(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong submitting the form.');
@@ -71,7 +71,7 @@ export default function Day1Page() {
     return (
       <div className="page thank-you">
         <div className="thank-you-badge">✓</div>
-        <h2>Thank you, {studentName}!</h2>
+        <h2>Thank you, {user.name}!</h2>
         <p>Your Day 1 forms have been submitted. Enjoy your placement.</p>
       </div>
     );
@@ -93,21 +93,11 @@ export default function Day1Page() {
       <div className="step-panel" key={step}>
       {step === 0 && (
         <div className="card">
-          <h2>Welcome</h2>
+          <h2>Welcome, {user.name}</h2>
           <p className="help">
             Please complete this on your first day. It covers your contact details, local induction,
             an optional equality monitoring survey, and a short safety quiz. It takes about 10 minutes.
           </p>
-          <div className="field">
-            <label htmlFor="studentName">Full Name *</label>
-            <input
-              id="studentName"
-              type="text"
-              value={studentName}
-              onChange={(e) => setStudentName(e.target.value)}
-              required
-            />
-          </div>
           <div className="field">
             <label htmlFor="todayDate">Today&rsquo;s Date *</label>
             <input id="todayDate" type="date" value={todayDate} onChange={(e) => setTodayDate(e.target.value)} required />
