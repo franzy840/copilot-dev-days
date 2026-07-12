@@ -206,7 +206,18 @@ export async function fetchTableForAdmin(key: AdminTableKey) {
 }
 
 export async function fetchAnalytics() {
-  const [userCounts, quizScores, feedbackRatings, wideningAge, wideningCategorical, day1ByDate] = await Promise.all([
+  const [
+    userCounts,
+    quizScores,
+    quizAnswerRows,
+    feedbackRatings,
+    wideningRows,
+    day1ByDate,
+    feedbackByDate,
+    departmentRows,
+    hospitalRows,
+    concernCount,
+  ] = await Promise.all([
     sql`
       SELECT
         (SELECT count(*) FROM users) AS total_users,
@@ -214,19 +225,31 @@ export async function fetchAnalytics() {
         (SELECT count(DISTINCT user_id) FROM feedback) AS feedback_completed
     `,
     sql`SELECT score, count(*) AS count FROM quiz_responses GROUP BY score ORDER BY score`,
+    sql`SELECT answers FROM quiz_responses`,
     sql`SELECT ratings FROM feedback`,
-    sql`SELECT age FROM widening_access WHERE age IS NOT NULL AND age <> ''`,
-    sql`SELECT gender, ethnicity, disabilities FROM widening_access`,
+    sql`
+      SELECT age, gender, trans_identification, sexual_orientation, ethnicity, disabilities,
+             household_occupation_at_14, school_type_11_to_15, free_school_meals, parents_attended_university
+      FROM widening_access
+    `,
     sql`SELECT submitted_at::date AS day, count(*) AS count FROM quiz_responses GROUP BY day ORDER BY day`,
+    sql`SELECT submitted_at::date AS day, count(*) AS count FROM feedback GROUP BY day ORDER BY day`,
+    sql`SELECT department FROM local_induction`,
+    sql`SELECT hospital FROM feedback`,
+    sql`SELECT count(*) AS count FROM feedback WHERE concern IS NOT NULL AND concern <> ''`,
   ]);
 
   return {
     totals: userCounts.rows[0],
     quizScores: quizScores.rows,
+    quizAnswers: quizAnswerRows.rows.map((r) => r.answers as Record<string, number>),
     feedbackRatingsRaw: feedbackRatings.rows,
-    wideningAges: wideningAge.rows.map((r) => Number(r.age)).filter((n) => !Number.isNaN(n)),
-    wideningCategorical: wideningCategorical.rows,
+    wideningRows: wideningRows.rows,
     day1ByDate: day1ByDate.rows,
+    feedbackByDate: feedbackByDate.rows,
+    departments: departmentRows.rows.map((r) => r.department as string | null),
+    hospitals: hospitalRows.rows.map((r) => r.hospital as string | null),
+    concernCount: Number(concernCount.rows[0]?.count ?? 0),
   };
 }
 

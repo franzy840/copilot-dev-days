@@ -24,7 +24,9 @@ export default function BarChart({ title, data, max, valueFormatter }: Props) {
         <div className="chart-rows">
           {data.map((d) => (
             <div className="chart-row" key={d.label}>
-              <span className="chart-row-label">{d.label}</span>
+              <span className="chart-row-label" title={d.label}>
+                {d.label}
+              </span>
               <div className="chart-row-track">
                 <div className="chart-row-fill" style={{ width: `${Math.min(100, (d.value / effectiveMax) * 100)}%` }} />
               </div>

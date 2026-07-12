@@ -4,7 +4,7 @@ import { listUsersForAdmin, fetchTableForAdmin, isAdminTableKey, fetchAnalytics,
 import { formatQuizAnswers, formatFeedbackRatings } from './_lib/format.js';
 import { buildWorkbookBuffer } from './_lib/excel.js';
 import { sendAdminNotification } from './_lib/mailer.js';
-import { FEEDBACK_STATEMENTS } from '../shared/constants.js';
+import { FEEDBACK_STATEMENTS, QUIZ_QUESTIONS } from '../shared/constants.js';
 
 // Consolidated: users, responses, analytics, export, and reset-password all
 // live in one serverless function (Vercel's Hobby plan caps a deployment
@@ -80,19 +80,34 @@ async function handleResponses(req: VercelRequest, res: VercelResponse) {
   res.status(200).json({ rows: formatted });
 }
 
+function byDate(rows: { day: string; count: string }[]) {
+  return rows.map((r) => ({
+    date: typeof r.day === 'string' ? r.day.slice(0, 10) : new Date(r.day).toISOString().slice(0, 10),
+    count: Number(r.count),
+  }));
+}
+
 async function handleAnalytics(res: VercelResponse) {
   const data = await fetchAnalytics();
 
-  const totals = {
-    totalUsers: Number(data.totals?.total_users ?? 0),
-    day1Completed: Number(data.totals?.day1_completed ?? 0),
-    feedbackCompleted: Number(data.totals?.feedback_completed ?? 0),
-  };
+  const totalUsers = Number(data.totals?.total_users ?? 0);
+  const day1Completed = Number(data.totals?.day1_completed ?? 0);
+  const feedbackCompleted = Number(data.totals?.feedback_completed ?? 0);
 
   const quizScoreDistribution = (data.quizScores as { score: number; count: string }[]).map((r) => ({
     score: r.score,
     count: Number(r.count),
   }));
+  const totalQuizzes = quizScoreDistribution.reduce((sum, r) => sum + r.count, 0);
+  const averageQuizScore =
+    totalQuizzes > 0 ? quizScoreDistribution.reduce((sum, r) => sum + r.score * r.count, 0) / totalQuizzes : 0;
+
+  const quizQuestionAccuracy = QUIZ_QUESTIONS.map((q, i) => {
+    const answered = data.quizAnswers.filter((a) => typeof a[q.id] === 'number');
+    const correct = answered.filter((a) => a[q.id] === q.correctIndex);
+    const pct = answered.length > 0 ? Math.round((correct.length / answered.length) * 100) : 0;
+    return { label: `Q${i + 1}. ${q.question}`, value: pct };
+  }).sort((a, b) => a.value - b.value);
 
   const feedbackAverages = FEEDBACK_STATEMENTS.map((s) => {
     const scores = (data.feedbackRatingsRaw as { ratings: Record<string, { score: number }> }[])
@@ -101,31 +116,74 @@ async function handleAnalytics(res: VercelResponse) {
     const average = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
     return { id: s.id, text: s.text, average: Math.round(average * 100) / 100, count: scores.length };
   });
+  const statementsWithData = feedbackAverages.filter((s) => s.count > 0);
+  const feedbackOverallAverage =
+    statementsWithData.length > 0
+      ? Math.round((statementsWithData.reduce((sum, s) => sum + s.average, 0) / statementsWithData.length) * 100) / 100
+      : 0;
 
+  const widening = data.wideningRows as {
+    age: string | null;
+    gender: string | null;
+    trans_identification: string | null;
+    sexual_orientation: string | null;
+    ethnicity: string | null;
+    disabilities: string | null;
+    household_occupation_at_14: string | null;
+    school_type_11_to_15: string | null;
+    free_school_meals: string | null;
+    parents_attended_university: string | null;
+  }[];
+
+  const ages = widening
+    .map((r) => (r.age ? Number(r.age) : NaN))
+    .filter((n) => Number.isFinite(n));
   const ageBuckets = AGE_BUCKETS.map(([label, min, max]) => ({
     label,
-    count: (data.wideningAges as number[]).filter((age) => age >= min && age <= max).length,
+    count: ages.filter((age) => age >= min && age <= max).length,
   }));
 
-  const categorical = data.wideningCategorical as { gender: string | null; ethnicity: string | null; disabilities: string | null }[];
-  const genderCounts = tally(categorical.map((r) => r.gender));
-  const ethnicityCounts = tally(categorical.map((r) => r.ethnicity));
-  const disabilityCounts = tally(categorical.map((r) => r.disabilities));
+  const genderCounts = tally(widening.map((r) => r.gender));
+  const transIdentificationCounts = tally(widening.map((r) => r.trans_identification));
+  const sexualOrientationCounts = tally(widening.map((r) => r.sexual_orientation));
+  const ethnicityCounts = tally(widening.map((r) => r.ethnicity));
+  const disabilityCounts = tally(widening.map((r) => r.disabilities));
+  const householdOccupationCounts = tally(widening.map((r) => r.household_occupation_at_14));
+  const schoolTypeCounts = tally(widening.map((r) => r.school_type_11_to_15));
+  const freeSchoolMealsCounts = tally(widening.map((r) => r.free_school_meals));
+  const parentsAttendedUniversityCounts = tally(widening.map((r) => r.parents_attended_university));
 
-  const day1SubmissionsByDate = (data.day1ByDate as { day: string; count: string }[]).map((r) => ({
-    date: typeof r.day === 'string' ? r.day.slice(0, 10) : new Date(r.day).toISOString().slice(0, 10),
-    count: Number(r.count),
-  }));
+  const departmentCounts = tally(data.departments);
+  const hospitalCounts = tally(data.hospitals);
 
   res.status(200).json({
-    totals,
+    totals: {
+      totalUsers,
+      day1Completed,
+      feedbackCompleted,
+      averageQuizScore: Math.round(averageQuizScore * 10) / 10,
+      feedbackOverallAverage,
+      concernCount: data.concernCount,
+      day1ConversionRate: totalUsers > 0 ? Math.round((day1Completed / totalUsers) * 100) : 0,
+      feedbackConversionRate: day1Completed > 0 ? Math.round((feedbackCompleted / day1Completed) * 100) : 0,
+    },
     quizScoreDistribution,
+    quizQuestionAccuracy,
     feedbackAverages,
     ageBuckets,
     genderCounts,
+    transIdentificationCounts,
+    sexualOrientationCounts,
     ethnicityCounts,
     disabilityCounts,
-    day1SubmissionsByDate,
+    householdOccupationCounts,
+    schoolTypeCounts,
+    freeSchoolMealsCounts,
+    parentsAttendedUniversityCounts,
+    departmentCounts,
+    hospitalCounts,
+    day1SubmissionsByDate: byDate(data.day1ByDate as { day: string; count: string }[]),
+    feedbackSubmissionsByDate: byDate(data.feedbackByDate as { day: string; count: string }[]),
   });
 }
 

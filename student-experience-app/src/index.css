@@ -891,6 +891,37 @@ input:focus-visible,
   color: var(--ink-soft);
 }
 
+.stat-tile-danger {
+  background: var(--danger-tint);
+  border-color: var(--danger);
+}
+
+.stat-tile-danger .stat-tile-value {
+  color: var(--danger);
+}
+
+.analytics-heading {
+  margin: 4px 0 -8px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line-soft);
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: var(--primary-dark);
+}
+
+.analytics > .analytics-heading:first-child,
+.analytics > .stat-tile-row + .analytics-heading {
+  padding-top: 4px;
+  border-top: none;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 20px 28px;
+}
+
 .chart h3 {
   margin: 0 0 14px;
   font-family: var(--font-display);
